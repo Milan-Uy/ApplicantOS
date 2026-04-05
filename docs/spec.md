@@ -12,11 +12,11 @@ A full-stack web app that helps job seekers track every application (status, not
 |-------|-----------|
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui |
 | Backend | Next.js API Routes + Server Actions, Node.js |
-| AI | Vercel AI SDK (`ai` + `@ai-sdk/google`), Gemini 1.5 Flash (free tier) |
+| AI | Vercel AI SDK (`ai` + `@ai-sdk/google`), Gemini 2.5 Flash (free tier) |
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth (Google + GitHub OAuth, email/password) |
 | Storage | AWS S3 (resume/cover letter PDFs) via presigned URLs |
-| Email | AWS SES (follow-up reminders, weekly digest) |
+| Email | Resend (follow-up reminders, weekly digest) |
 | Automation | n8n (self-hosted — Oracle Cloud free tier or Railway) |
 | PDF Export | `@react-pdf/renderer` (server-side, no headless browser) |
 | Drag & Drop | `@hello-pangea/dnd` (maintained fork of react-beautiful-dnd) |
@@ -125,12 +125,12 @@ Both calls run in parallel via `Promise.all()`. Output validated with Zod schema
 
 | Workflow | Trigger | Action | Details |
 |----------|---------|--------|---------|
-| **Follow-up reminder** | Hourly poll | Email via SES + in-app notification | Queries Supabase for applications where `follow_up_at <= now()` and `reminder_sent = false`. Sends personalized email ("Time to follow up with {company} about your {role} application"). Sets `reminder_sent = true`. Inserts row into `notifications` table. |
-| **Weekly job search digest** | Every Monday 9:00 AM | Email summary via SES | Queries each user's past-week activity: new apps submitted, status changes, upcoming follow-ups/interviews. Formats HTML email with stats ("You applied to 5 roles this week, 2 moved to interview stage"). |
+| **Follow-up reminder** | Hourly poll | Email via Resend + in-app notification | Queries Supabase for applications where `follow_up_at <= now()` and `reminder_sent = false`. Sends personalized email ("Time to follow up with {company} about your {role} application"). Sets `reminder_sent = true`. Inserts row into `notifications` table. |
+| **Weekly job search digest** | Every Monday 9:00 AM | Email summary via Resend | Queries each user's past-week activity: new apps submitted, status changes, upcoming follow-ups/interviews. Formats HTML email with stats ("You applied to 5 roles this week, 2 moved to interview stage"). |
 
 **n8n integration points:**
 - **Supabase REST API** — reads/writes application data using service role key
-- **AWS SES** — sends formatted HTML emails
+- **Resend** — sends formatted HTML emails (React Email templates)
 - **Webhook endpoint** (`POST /api/webhooks/n8n`) — receives callbacks for in-app notifications, secured with `N8N_WEBHOOK_SECRET`
 
 ---
@@ -276,12 +276,12 @@ Vercel AI SDK Pipeline
 
 ---
 
-## AWS Resources (Free Tier)
+## External Service Limits (Free Tier)
 
 | Service | Usage | Free Tier Limit |
 |---------|-------|-----------------|
-| S3 | Resume + cover letter PDF storage | 5 GB, 20K GET, 2K PUT/month |
-| SES | Follow-up reminders + weekly digest | 200/day (sandbox) or 62K/month (production) |
+| AWS S3 | Resume + cover letter PDF storage | 5 GB, 20K GET, 2K PUT/month |
+| Resend | Follow-up reminders + weekly digest | 100/day, 3K/month |
 
 ---
 
@@ -335,7 +335,7 @@ AWS_ACCESS_KEY_ID=
 AWS_SECRET_ACCESS_KEY=
 AWS_REGION=
 AWS_S3_BUCKET=
-AWS_SES_FROM_EMAIL=
+RESEND_API_KEY=
 
 # n8n
 N8N_WEBHOOK_SECRET=

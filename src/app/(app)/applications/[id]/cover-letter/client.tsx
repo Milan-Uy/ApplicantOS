@@ -28,6 +28,8 @@ export function CoverLetterClient({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const canGenerate = !!jobDescription && !!resumeText
 
@@ -35,6 +37,7 @@ export function CoverLetterClient({
     if (!canGenerate) return
     setLoading(true)
     setError(null)
+    setDownloadError(null)
 
     try {
       const res = await fetch("/api/ai/cover-letter", {
@@ -67,6 +70,37 @@ export function CoverLetterClient({
     await navigator.clipboard.writeText(coverLetter)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleDownload() {
+    if (!coverLetter) return
+    setDownloading(true)
+    setDownloadError(null)
+
+    try {
+      const res = await fetch("/api/pdf/cover-letter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ applicationId, coverLetter }),
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || "Failed to generate PDF")
+      }
+
+      const { downloadUrl } = await res.json()
+      const a = document.createElement("a")
+      a.href = downloadUrl
+      a.download = ""
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    } catch (err) {
+      setDownloadError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setDownloading(false)
+    }
   }
 
   return (
@@ -168,13 +202,25 @@ export function CoverLetterClient({
             <h2 className="text-sm font-medium text-muted-foreground">
               Generated Cover Letter
             </h2>
-            <button
-              onClick={handleCopy}
-              className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
-            >
-              {copied ? "Copied!" : "Copy"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleDownload}
+                disabled={downloading}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {downloading ? "Generating PDF..." : "Download PDF"}
+              </button>
+              <button
+                onClick={handleCopy}
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {copied ? "Copied!" : "Copy"}
+              </button>
+            </div>
           </div>
+          {downloadError && (
+            <p className="text-xs text-destructive mb-2">{downloadError}</p>
+          )}
           <textarea
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
