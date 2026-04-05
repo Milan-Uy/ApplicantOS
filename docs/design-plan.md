@@ -8,7 +8,7 @@
 
 **Tech Stack:** Next.js 15, React 19, TypeScript, Tailwind CSS 4, shadcn/ui (base-nova), Lucide icons, Sonner toasts
 
-**Spec Reference:** `docs/spec.md`
+**Spec Reference:** `.superpowers/brainstorm/2269-1775183573`
 
 ---
 
