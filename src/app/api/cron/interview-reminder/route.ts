@@ -69,10 +69,15 @@ export async function GET(request: NextRequest) {
         }),
       })
 
-      await supabaseAdmin
+      const { error: updateError } = await supabaseAdmin
         .from("applications")
         .update({ reminder_sent: true })
         .eq("id", app.id)
+
+      if (updateError) {
+        console.error(`Failed to mark reminder_sent for application ${app.id}:`, updateError)
+        throw updateError
+      }
     })
   )
 
