@@ -37,6 +37,7 @@ export function CoverLetterClient({
     if (!canGenerate) return
     setLoading(true)
     setError(null)
+    setDownloadError(null)
 
     try {
       const res = await fetch("/api/ai/cover-letter", {
@@ -89,7 +90,12 @@ export function CoverLetterClient({
       }
 
       const { downloadUrl } = await res.json()
-      window.open(downloadUrl, "_blank")
+      const a = document.createElement("a")
+      a.href = downloadUrl
+      a.download = ""
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
     } catch (err) {
       setDownloadError(err instanceof Error ? err.message : "Something went wrong")
     } finally {
