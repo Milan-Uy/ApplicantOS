@@ -37,9 +37,9 @@ export async function updateSession(request: NextRequest) {
 
   // Public paths that don't require auth
   const publicPaths = ["/", "/login", "/signup", "/auth/callback"]
-  const isPublicPath = publicPaths.some(
-    (p) => pathname === p || pathname.startsWith("/auth/")
-  )
+  const isPublicPath =
+    publicPaths.some((p) => pathname === p || pathname.startsWith("/auth/")) ||
+    pathname.startsWith("/api/cron/")
 
   // If not authenticated and trying to access protected route
   if (!user && !isPublicPath) {
