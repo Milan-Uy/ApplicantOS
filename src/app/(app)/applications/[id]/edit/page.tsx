@@ -2,7 +2,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { updateApplication } from "../../actions"
-import { SubmitButton } from "../../../new/submit-button"
+import { SubmitButton } from "../../new/submit-button"
 import type { Application } from "@/types/database"
 
 const STATUSES = [
