@@ -1,6 +1,9 @@
 import Link from "next/link"
-import { createApplication } from "../actions"
-import { SubmitButton } from "./submit-button"
+import { notFound } from "next/navigation"
+import { createClient } from "@/lib/supabase/server"
+import { updateApplication } from "../../actions"
+import { SubmitButton } from "../../../new/submit-button"
+import type { Application } from "@/types/database"
 
 const STATUSES = [
   { value: "wishlist", label: "Wishlist" },
@@ -20,13 +23,7 @@ const SOURCES = [
   { value: "other", label: "Other" },
 ]
 
-function Field({
-  label,
-  children,
-}: {
-  label: string
-  children: React.ReactNode
-}) {
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-foreground">{label}</label>
@@ -38,29 +35,47 @@ function Field({
 const inputClass =
   "h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
 
-export default function NewApplicationPage() {
+export default async function EditApplicationPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: app } = await supabase
+    .from("applications")
+    .select("*")
+    .eq("id", id)
+    .single()
+
+  if (!app) notFound()
+
+  const application = app as Application
+  const action = updateApplication.bind(null, id)
+
+  const toDateInput = (val: string | null) => val?.slice(0, 10) ?? ""
+  const toDateTimeInput = (val: string | null) => val?.slice(0, 16) ?? ""
+
   return (
     <div className="p-6 lg:p-8 max-w-2xl mx-auto w-full">
       <Link
-        href="/applications"
+        href={`/applications/${id}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-fg hover:text-foreground transition-colors mb-4"
       >
-        ← Back to Applications
+        ← Back to Application
       </Link>
-      <h1 className="text-2xl font-bold text-foreground">
-        Add New Application
-      </h1>
+      <h1 className="text-2xl font-bold text-foreground">Edit Application</h1>
       <p className="text-sm text-muted-fg mt-0.5">
-        Track a new job application
+        {application.role} at {application.company}
       </p>
 
-      <form action={createApplication} className="mt-8 flex flex-col gap-5">
+      <form action={action} className="mt-8 flex flex-col gap-5">
         <div className="grid sm:grid-cols-2 gap-5">
           <Field label="Company *">
             <input
               name="company"
               required
-              placeholder="e.g. Acme Inc."
+              defaultValue={application.company}
               className={inputClass}
             />
           </Field>
@@ -68,7 +83,7 @@ export default function NewApplicationPage() {
             <input
               name="role"
               required
-              placeholder="e.g. Frontend Engineer"
+              defaultValue={application.role}
               className={inputClass}
             />
           </Field>
@@ -78,6 +93,7 @@ export default function NewApplicationPage() {
           <input
             name="url"
             type="url"
+            defaultValue={application.url ?? ""}
             placeholder="https://..."
             className={inputClass}
           />
@@ -85,21 +101,17 @@ export default function NewApplicationPage() {
 
         <div className="grid sm:grid-cols-2 gap-5">
           <Field label="Status">
-            <select name="status" defaultValue="wishlist" className={inputClass}>
+            <select name="status" defaultValue={application.status} className={inputClass}>
               {STATUSES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </Field>
           <Field label="Source">
-            <select name="source" defaultValue="" className={inputClass}>
+            <select name="source" defaultValue={application.source ?? ""} className={inputClass}>
               <option value="">Select source</option>
               {SOURCES.map((s) => (
-                <option key={s.value} value={s.value}>
-                  {s.label}
-                </option>
+                <option key={s.value} value={s.value}>{s.label}</option>
               ))}
             </select>
           </Field>
@@ -108,6 +120,7 @@ export default function NewApplicationPage() {
         <Field label="Location">
           <input
             name="location"
+            defaultValue={application.location ?? ""}
             placeholder="e.g. Remote, New York, NY"
             className={inputClass}
           />
@@ -118,7 +131,7 @@ export default function NewApplicationPage() {
             <input
               name="salary_min"
               type="number"
-              placeholder="e.g. 80000"
+              defaultValue={application.salary_min ?? ""}
               className={inputClass}
             />
           </Field>
@@ -126,7 +139,7 @@ export default function NewApplicationPage() {
             <input
               name="salary_max"
               type="number"
-              placeholder="e.g. 120000"
+              defaultValue={application.salary_max ?? ""}
               className={inputClass}
             />
           </Field>
@@ -136,6 +149,7 @@ export default function NewApplicationPage() {
           <textarea
             name="job_description"
             rows={6}
+            defaultValue={application.job_description ?? ""}
             placeholder="Paste the full job description here for AI features..."
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors resize-y"
           />
@@ -145,6 +159,7 @@ export default function NewApplicationPage() {
           <textarea
             name="notes"
             rows={3}
+            defaultValue={application.notes ?? ""}
             placeholder="Any personal notes..."
             className="w-full rounded-lg border border-border bg-card px-3 py-2 text-sm text-foreground placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors resize-y"
           />
@@ -154,6 +169,7 @@ export default function NewApplicationPage() {
           <Field label="Contact Name">
             <input
               name="contact_name"
+              defaultValue={application.contact_name ?? ""}
               placeholder="e.g. Jane Smith"
               className={inputClass}
             />
@@ -162,6 +178,7 @@ export default function NewApplicationPage() {
             <input
               name="contact_email"
               type="email"
+              defaultValue={application.contact_email ?? ""}
               placeholder="jane@acme.com"
               className={inputClass}
             />
@@ -170,23 +187,40 @@ export default function NewApplicationPage() {
 
         <div className="grid sm:grid-cols-2 gap-5">
           <Field label="Applied Date">
-            <input name="applied_at" type="date" className={inputClass} />
+            <input
+              name="applied_at"
+              type="date"
+              defaultValue={toDateInput(application.applied_at)}
+              className={inputClass}
+            />
           </Field>
           <Field label="Interview Date">
             <input
               name="interview_date"
               type="datetime-local"
+              defaultValue={toDateTimeInput(application.interview_date)}
               className={inputClass}
             />
           </Field>
         </div>
 
         <Field label="Follow-up Date">
-          <input name="follow_up_at" type="date" className={inputClass} />
+          <input
+            name="follow_up_at"
+            type="date"
+            defaultValue={toDateInput(application.follow_up_at)}
+            className={inputClass}
+          />
         </Field>
 
         <div className="flex gap-3 pt-4">
-          <SubmitButton />
+          <SubmitButton label="Save Changes" />
+          <Link
+            href={`/applications/${id}`}
+            className="px-6 py-2.5 rounded-lg border border-border text-sm font-semibold text-foreground hover:bg-muted transition-colors"
+          >
+            Cancel
+          </Link>
         </div>
       </form>
     </div>

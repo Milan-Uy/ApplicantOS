@@ -3,7 +3,7 @@ import { generateText } from "ai"
 import { COVER_LETTER_PROMPT } from "./prompts/cover-letter"
 import type { CoverLetterResult } from "@/types/database"
 
-const model = google("gemini-1.5-flash")
+const model = google("gemini-2.5-flash")
 
 export async function generateCoverLetter(params: {
   jobDescription: string

@@ -1,10 +1,10 @@
 import { google } from "@ai-sdk/google"
-import { generateObject } from "ai"
+import { generateText, Output } from "ai"
 import { z } from "zod"
 import { KEYWORD_MATCHER_PROMPT, BULLET_REWRITER_PROMPT } from "./prompts/resume-optimizer"
 import type { ResumeOptimizeResult } from "@/types/database"
 
-const model = google("gemini-1.5-flash")
+const model = google("gemini-2.5-flash")
 
 const keywordSchema = z.object({
   matchScore: z.number().min(0).max(100),
@@ -28,22 +28,22 @@ export async function optimizeResume(
   const userMessage = `## Job Description\n${jobDescription}\n\n## Resume\n${resumeText}`
 
   const [keywordResult, bulletResult] = await Promise.all([
-    generateObject({
+    generateText({
       model,
+      output: Output.object({ schema: keywordSchema }),
       system: KEYWORD_MATCHER_PROMPT,
       prompt: userMessage,
-      schema: keywordSchema,
     }),
-    generateObject({
+    generateText({
       model,
+      output: Output.object({ schema: bulletSchema }),
       system: BULLET_REWRITER_PROMPT,
       prompt: userMessage,
-      schema: bulletSchema,
     }),
   ])
 
-  const { matchScore, missingKeywords } = keywordResult.object
-  const { suggestions } = bulletResult.object
+  const { matchScore, missingKeywords } = keywordResult.output
+  const { suggestions } = bulletResult.output
 
   const summary =
     matchScore >= 70
