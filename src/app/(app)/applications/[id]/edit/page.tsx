@@ -42,13 +42,17 @@ export default async function EditApplicationPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: app } = await supabase
-    .from("applications")
-    .select("*")
-    .eq("id", id)
-    .single()
+  const [{ data: app }, { data: documents }] = await Promise.all([
+    supabase.from("applications").select("*").eq("id", id).single(),
+    supabase
+      .from("documents")
+      .select("id, label, filename")
+      .eq("type", "resume")
+      .order("created_at", { ascending: false }),
+  ])
 
   if (!app) notFound()
+  const resumes = documents ?? []
 
   const application = app as Application
   const action = updateApplication.bind(null, id)
@@ -116,6 +120,17 @@ export default async function EditApplicationPage({
             </select>
           </Field>
         </div>
+
+        <Field label="Resume">
+          <select name="resume_id" defaultValue={application.resume_id ?? ""} className={inputClass}>
+            <option value="">Select resume (optional)</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label || r.filename}
+              </option>
+            ))}
+          </select>
+        </Field>
 
         <Field label="Location">
           <input

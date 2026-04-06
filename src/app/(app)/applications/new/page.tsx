@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { createApplication } from "../actions"
 import { SubmitButton } from "./submit-button"
+import { createClient } from "@/lib/supabase/server"
 
 const STATUSES = [
   { value: "wishlist", label: "Wishlist" },
@@ -38,7 +39,15 @@ function Field({
 const inputClass =
   "h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
 
-export default function NewApplicationPage() {
+export default async function NewApplicationPage() {
+  const supabase = await createClient()
+  const { data: documents } = await supabase
+    .from("documents")
+    .select("id, label, filename")
+    .eq("type", "resume")
+    .order("created_at", { ascending: false })
+  const resumes = documents ?? []
+
   return (
     <div className="p-6 lg:p-8 max-w-2xl mx-auto w-full">
       <Link
@@ -104,6 +113,17 @@ export default function NewApplicationPage() {
             </select>
           </Field>
         </div>
+
+        <Field label="Resume">
+          <select name="resume_id" defaultValue="" className={inputClass}>
+            <option value="">Select resume (optional)</option>
+            {resumes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label || r.filename}
+              </option>
+            ))}
+          </select>
+        </Field>
 
         <Field label="Location">
           <input
