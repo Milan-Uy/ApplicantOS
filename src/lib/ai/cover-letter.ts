@@ -1,8 +1,9 @@
-import { google } from "@ai-sdk/google"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { generateText } from "ai"
 import { COVER_LETTER_PROMPT } from "./prompts/cover-letter"
 import type { CoverLetterResult } from "@/types/database"
 
+const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY })
 const model = google("gemini-2.5-flash")
 
 export async function generateCoverLetter(params: {

@@ -1,9 +1,10 @@
-import { google } from "@ai-sdk/google"
+import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import { generateText, Output } from "ai"
 import { z } from "zod"
 import { KEYWORD_MATCHER_PROMPT, BULLET_REWRITER_PROMPT } from "./prompts/resume-optimizer"
 import type { ResumeOptimizeResult } from "@/types/database"
 
+const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY })
 const model = google("gemini-2.5-flash")
 
 const keywordSchema = z.object({

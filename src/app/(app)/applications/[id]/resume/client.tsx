@@ -77,19 +77,19 @@ export function ResumeOptimizerClient({
       <div>
         <Link
           href={`/applications/${applicationId}`}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-muted-fg hover:text-foreground transition-colors"
         >
           &larr; Back to {company} &mdash; {role}
         </Link>
         <h1 className="mt-2 text-2xl font-bold">Resume Optimizer</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <p className="text-muted-fg text-sm mt-1">
           AI-powered analysis of your resume against the job description
         </p>
       </div>
 
       {!canOptimize && (
         <div className="bg-card rounded-xl border border-border shadow-card p-5">
-          <p className="text-muted-foreground">
+          <p className="text-muted-fg">
             {!jobDescription && !resumeText
               ? "Add a job description and link a resume to this application to use the optimizer."
               : !jobDescription
@@ -126,14 +126,14 @@ export function ResumeOptimizerClient({
         <div className="space-y-6">
           {/* Match Score */}
           <div className="bg-card rounded-xl border border-border shadow-card p-5">
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">
+            <h2 className="text-sm font-medium text-muted-fg mb-3">
               Match Score
             </h2>
             <div className="flex items-end gap-3 mb-3">
               <span className={cn("text-5xl font-bold", scoreColor)}>
                 {result.matchScore}
               </span>
-              <span className="text-muted-foreground text-lg mb-1">/ 100</span>
+              <span className="text-muted-fg text-lg mb-1">/ 100</span>
             </div>
             <div className="w-full h-2.5 rounded-full bg-muted overflow-hidden">
               <div
@@ -141,13 +141,13 @@ export function ResumeOptimizerClient({
                 style={{ width: `${result.matchScore}%` }}
               />
             </div>
-            <p className="text-sm text-muted-foreground mt-3">{result.summary}</p>
+            <p className="text-sm text-muted-fg mt-3">{result.summary}</p>
           </div>
 
           {/* Missing Keywords */}
           {result.missingKeywords.length > 0 && (
             <div className="bg-card rounded-xl border border-border shadow-card p-5">
-              <h2 className="text-sm font-medium text-muted-foreground mb-3">
+              <h2 className="text-sm font-medium text-muted-fg mb-3">
                 Missing Keywords
               </h2>
               <div className="flex flex-wrap gap-2">
@@ -166,7 +166,7 @@ export function ResumeOptimizerClient({
           {/* Suggestions */}
           {result.suggestions.length > 0 && (
             <div className="bg-card rounded-xl border border-border shadow-card p-5">
-              <h2 className="text-sm font-medium text-muted-foreground mb-4">
+              <h2 className="text-sm font-medium text-muted-fg mb-4">
                 Suggested Rewrites
               </h2>
               <div className="space-y-4">
@@ -175,11 +175,11 @@ export function ResumeOptimizerClient({
                     key={i}
                     className="rounded-lg border border-border p-4 space-y-2"
                   >
-                    <p className="text-sm text-muted-foreground line-through">
+                    <p className="text-sm text-muted-fg line-through">
                       {s.original}
                     </p>
                     <p className="text-sm font-medium">{s.rewritten}</p>
-                    <p className="text-xs text-muted-foreground">{s.reason}</p>
+                    <p className="text-xs text-muted-fg">{s.reason}</p>
                   </div>
                 ))}
               </div>
