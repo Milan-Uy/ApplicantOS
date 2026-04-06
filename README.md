@@ -19,6 +19,15 @@
 
 Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Supabase (Auth + DB) · Vercel AI SDK · Gemini 2.5 Flash · AWS S3 · Resend
 
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
 ## Environment Variables
 
 Create a `.env.local` file with the following:
