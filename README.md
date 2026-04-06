@@ -1,36 +1,56 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ApplicantOS
+
+> AI-powered job application tracker and resume optimizer.
+
+**Live Demo:** https://applicant-os.vercel.app/
+
+## Features
+
+- **Kanban board** — drag-and-drop applications across status columns
+- **Application tracking** — wishlist → applied → interview → offer/rejected
+- **AI Resume Optimizer** — tailored suggestions powered by Gemini 2.5 Flash
+- **AI Cover Letter Generator** — job-specific cover letters in seconds
+- **Resume library** — upload, store, and parse resumes (PDF/DOCX) via AWS S3
+- **Dashboard** — stats, recent activity, and upcoming interviews
+- **Interview reminder emails** — automated via Resend + Vercel Cron
+- **Auth** — Google OAuth + email/password via Supabase
+
+## Tech Stack
+
+Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Supabase (Auth + DB) · Vercel AI SDK · Gemini 2.5 Flash · AWS S3 · Resend
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Create a `.env.local` file with the following:
 
-## Learn More
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+GOOGLE_GEMINI_API_KEY=
+AWS_ACCESS_KEY_ID=
+AWS_SECRET_ACCESS_KEY=
+AWS_REGION=
+AWS_S3_BUCKET=
+RESEND_API_KEY=
+N8N_WEBHOOK_SECRET=
+CRON_SECRET=
+NEXT_PUBLIC_APP_URL=
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Commands
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run dev      # Dev server on localhost:3000
+npm run build    # Production build
+npm run lint     # ESLint
+```
