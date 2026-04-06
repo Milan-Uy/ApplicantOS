@@ -1,6 +1,6 @@
 # ApplicantOS — Implementation Status
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-06
 
 ## MVP Roadmap
 
@@ -11,14 +11,14 @@
 | 3 | Application CRUD + list view | ✅ Complete |
 | 4 | Kanban board (`@hello-pangea/dnd`) | ✅ Complete |
 | 5 | Resume library + S3 upload + text extraction | ✅ Complete |
-| 6 | AI Resume Optimizer (Vercel AI SDK `generateObject`) | ✅ Complete |
+| 6 | AI Resume Optimizer (Vercel AI SDK `generateText` + `Output.object`) | ✅ Complete |
 | 7 | AI Cover Letter Generator (text output) | ✅ Complete |
 
 ## Phase 2 (Deferred)
 
 | Feature | Status |
 |---------|--------|
-| Dashboard stats + upcoming interviews | ⬜ Not started |
+| Dashboard stats + upcoming interviews | ✅ Complete |
 | PDF export for cover letters | ✅ Complete |
 | Interview reminder email (Resend + Vercel Cron) | ✅ Complete |
 | In-app notification center | ❌ Dropped |
