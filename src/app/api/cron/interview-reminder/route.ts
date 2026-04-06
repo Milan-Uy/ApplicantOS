@@ -58,7 +58,7 @@ export async function GET(request: NextRequest) {
       )
 
       await resend.emails.send({
-        from: "ApplicantOS <reminders@applicantos.app>",
+        from: "ApplicantOS <onboarding@resend.dev>",
         to: userData.user.email,
         subject: `Interview reminder: ${app.role} at ${app.company} tomorrow`,
         react: React.createElement(InterviewReminderEmail, {
