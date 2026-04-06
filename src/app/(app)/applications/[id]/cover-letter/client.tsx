@@ -104,23 +104,23 @@ export function CoverLetterClient({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
       <div>
         <Link
           href={`/applications/${applicationId}`}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="text-sm text-muted-fg hover:text-foreground transition-colors"
         >
           &larr; Back to {company} &mdash; {role}
         </Link>
         <h1 className="mt-2 text-2xl font-bold">Cover Letter Generator</h1>
-        <p className="text-muted-foreground text-sm mt-1">
+        <p className="text-muted-fg text-sm mt-1">
           AI-generated cover letter tailored to this role
         </p>
       </div>
 
       {!canGenerate && (
         <div className="bg-card rounded-xl border border-border shadow-card p-5">
-          <p className="text-muted-foreground">
+          <p className="text-muted-fg">
             {!jobDescription && !resumeText
               ? "Add a job description and link a resume to this application to generate a cover letter."
               : !jobDescription
@@ -140,7 +140,7 @@ export function CoverLetterClient({
         <div className="space-y-4">
           {/* Tone selector */}
           <div className="bg-card rounded-xl border border-border shadow-card p-5">
-            <label className="text-sm font-medium text-muted-foreground block mb-3">
+            <label className="text-sm font-medium text-muted-fg block mb-3">
               Tone
             </label>
             <div className="flex gap-2">
@@ -152,7 +152,7 @@ export function CoverLetterClient({
                     "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
                     tone === t
                       ? "bg-accent text-accent-fg"
-                      : "bg-muted text-muted-foreground hover:text-foreground"
+                      : "bg-muted text-muted-fg hover:text-foreground"
                   )}
                 >
                   {t === "formal" ? "Formal" : "Conversational"}
@@ -165,7 +165,7 @@ export function CoverLetterClient({
           <div className="bg-card rounded-xl border border-border shadow-card p-5">
             <label
               htmlFor="why-this-role"
-              className="text-sm font-medium text-muted-foreground block mb-2"
+              className="text-sm font-medium text-muted-fg block mb-2"
             >
               Why this role? (optional)
             </label>
@@ -175,7 +175,7 @@ export function CoverLetterClient({
               onChange={(e) => setWhyThisRole(e.target.value)}
               placeholder="What excites you about this role or company?"
               rows={3}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
             />
           </div>
 
@@ -199,20 +199,20 @@ export function CoverLetterClient({
       {coverLetter && (
         <div className="bg-card rounded-xl border border-border shadow-card p-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-medium text-muted-foreground">
+            <h2 className="text-sm font-medium text-muted-fg">
               Generated Cover Letter
             </h2>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleDownload}
                 disabled={downloading}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-fg hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {downloading ? "Generating PDF..." : "Download PDF"}
               </button>
               <button
                 onClick={handleCopy}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-fg hover:text-foreground transition-colors"
               >
                 {copied ? "Copied!" : "Copy"}
               </button>

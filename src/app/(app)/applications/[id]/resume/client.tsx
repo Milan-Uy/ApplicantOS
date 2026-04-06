@@ -73,7 +73,7 @@ export function ResumeOptimizerClient({
         : "bg-destructive"
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
       <div>
         <Link
           href={`/applications/${applicationId}`}
