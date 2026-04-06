@@ -37,9 +37,9 @@ export async function POST(request: NextRequest) {
   let text = ""
 
   if (contentType === "application/pdf") {
-    const { default: pdfParse } = await import("pdf-parse")
-    const result = await pdfParse(buffer)
-    text = result.text
+    const { extractText } = await import("unpdf")
+    const { text: pages } = await extractText(buffer, { mergePages: true })
+    text = pages
   } else if (
     contentType ===
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
