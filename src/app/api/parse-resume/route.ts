@@ -32,18 +32,18 @@ export async function POST(request: NextRequest) {
 
   const response = await s3.send(command)
   const bytes = await response.Body!.transformToByteArray()
-  const buffer = Buffer.from(bytes)
 
   let text = ""
 
   if (contentType === "application/pdf") {
     const { extractText } = await import("unpdf")
-    const { text: pages } = await extractText(buffer, { mergePages: true })
+    const { text: pages } = await extractText(bytes, { mergePages: true })
     text = pages
   } else if (
     contentType ===
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
   ) {
+    const buffer = Buffer.from(bytes)
     const mammoth = await import("mammoth")
     const result = await mammoth.extractRawText({ buffer })
     text = result.value
