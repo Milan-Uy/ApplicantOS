@@ -1,15 +1,16 @@
 import Link from "next/link"
 import { Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import type { Application } from "@/types/database"
-import { StatusBadge } from "@/components/ui/badge"
+import type { ApplicationListItem } from "@/types/database"
 import { ApplicationsView } from "@/components/applications/ApplicationsView"
 
 export default async function ApplicationsPage() {
   const supabase = await createClient()
   const { data: applications } = await supabase
     .from("applications")
-    .select("*")
+    .select(
+      "id, company, role, status, source, salary_min, salary_max, interview_date, applied_at, updated_at"
+    )
     .order("updated_at", { ascending: false })
 
   return (
@@ -32,7 +33,7 @@ export default async function ApplicationsPage() {
       </div>
 
       <ApplicationsView
-        applications={(applications as Application[]) ?? []}
+        applications={(applications as ApplicationListItem[]) ?? []}
       />
     </div>
   )

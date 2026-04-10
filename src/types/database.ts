@@ -44,6 +44,33 @@ export interface Application {
   updated_at: string
 }
 
+// Narrow projection used by the applications list + kanban views.
+export type ApplicationListItem = Pick<
+  Application,
+  | "id"
+  | "company"
+  | "role"
+  | "status"
+  | "source"
+  | "salary_min"
+  | "salary_max"
+  | "interview_date"
+  | "applied_at"
+  | "updated_at"
+>
+
+// Narrow projection used by the dashboard stats aggregation.
+export type ApplicationStatsRow = Pick<
+  Application,
+  "id" | "company" | "role" | "status" | "source"
+>
+
+// Narrow projection used by the dashboard's upcoming interviews section.
+export type UpcomingInterview = Pick<
+  Application,
+  "id" | "company" | "role" | "interview_date"
+>
+
 export interface Document {
   id: string
   user_id: string

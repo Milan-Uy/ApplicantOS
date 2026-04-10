@@ -1,7 +1,10 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/ui/badge"
-import type { Application } from "@/types/database"
+import type {
+  ApplicationStatsRow,
+  UpcomingInterview,
+} from "@/types/database"
 
 function StatCard({
   label,
@@ -39,45 +42,53 @@ const SOURCE_LABELS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: applications } = await supabase
-    .from("applications")
-    .select("*")
-    .order("created_at", { ascending: false })
 
-  const apps = (applications as Application[]) ?? []
+  const nowIso = new Date().toISOString()
 
-  const total = apps.length
-  const responded = apps.filter(
-    (a) =>
-      !["wishlist", "applied"].includes(a.status) &&
-      a.status !== "ghosted"
-  ).length
-  const applied = apps.filter((a) => a.status !== "wishlist").length
-  const responseRate =
-    applied > 0 ? Math.round((responded / applied) * 100) : 0
-  const interviews = apps.filter((a) =>
-    ["interview", "phone_screen"].includes(a.status)
-  ).length
-  const offers = apps.filter((a) => a.status === "offer").length
+  const [appsResult, upcomingResult] = await Promise.all([
+    supabase
+      .from("applications")
+      .select("id, company, role, status, source")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("applications")
+      .select("id, company, role, interview_date")
+      .gt("interview_date", nowIso)
+      .order("interview_date", { ascending: true })
+      .limit(5),
+  ])
 
-  const now = new Date()
-  const upcomingInterviews = apps
-    .filter(
-      (a) => a.interview_date && new Date(a.interview_date) > now
-    )
-    .sort(
-      (a, b) =>
-        new Date(a.interview_date!).getTime() -
-        new Date(b.interview_date!).getTime()
-    )
-    .slice(0, 5)
+  const apps = (appsResult.data as ApplicationStatsRow[]) ?? []
+  const upcomingInterviews =
+    (upcomingResult.data as UpcomingInterview[]) ?? []
 
-  // Source breakdown
+  // Single-pass aggregation over all applications.
+  let responded = 0
+  let applied = 0
+  let interviews = 0
+  let offers = 0
   const sourceCounts: Record<string, number> = {}
-  apps.forEach((a) => {
+
+  for (const a of apps) {
+    if (a.status !== "wishlist") applied++
+    if (
+      a.status !== "wishlist" &&
+      a.status !== "applied" &&
+      a.status !== "ghosted"
+    ) {
+      responded++
+    }
+    if (a.status === "interview" || a.status === "phone_screen") interviews++
+    if (a.status === "offer") offers++
+
     const src = a.source ?? "other"
     sourceCounts[src] = (sourceCounts[src] ?? 0) + 1
-  })
+  }
+
+  const total = apps.length
+  const responseRate =
+    applied > 0 ? Math.round((responded / applied) * 100) : 0
+
   const sourceEntries = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])
   const maxSource = sourceEntries[0]?.[1] ?? 1
 

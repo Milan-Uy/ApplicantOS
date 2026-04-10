@@ -2,18 +2,26 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
 import { Briefcase } from "lucide-react"
 import { StatusBadge } from "@/components/ui/badge"
-import type { Application } from "@/types/database"
-import { KanbanBoard } from "./KanbanBoard"
+import type { ApplicationListItem } from "@/types/database"
+
+const KanbanBoard = dynamic(
+  () => import("./KanbanBoard").then((m) => m.KanbanBoard),
+  {
+    ssr: false,
+    loading: () => <div className="min-h-[400px]" />,
+  }
+)
 
 export function ApplicationsView({
   applications,
 }: {
-  applications: Application[]
+  applications: ApplicationListItem[]
 }) {
-  const [view, setView] = useState<"kanban" | "list">("kanban")
+  const [view, setView] = useState<"kanban" | "list">("list")
 
   return (
     <>
@@ -52,7 +60,7 @@ export function ApplicationsView({
   )
 }
 
-function ListView({ applications }: { applications: Application[] }) {
+function ListView({ applications }: { applications: ApplicationListItem[] }) {
   if (applications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 text-center">

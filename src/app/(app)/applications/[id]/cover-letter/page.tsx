@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import type { Application, AIResult, CoverLetterResult } from "@/types/database"
+import type { AIResult, CoverLetterResult } from "@/types/database"
 import { CoverLetterClient } from "./client"
 
 export default async function CoverLetterPage({
@@ -19,7 +19,7 @@ export default async function CoverLetterPage({
 
   const { data: application } = await supabase
     .from("applications")
-    .select("*")
+    .select("company, role, job_description, resume_id")
     .eq("id", id)
     .eq("user_id", user.id)
     .single()
@@ -28,11 +28,11 @@ export default async function CoverLetterPage({
 
   // Get linked resume text
   let resumeText: string | null = null
-  if ((application as Application).resume_id) {
+  if (application.resume_id) {
     const { data: doc } = await supabase
       .from("documents")
       .select("extracted_text")
-      .eq("id", (application as Application).resume_id!)
+      .eq("id", application.resume_id)
       .single()
     resumeText = doc?.extracted_text ?? null
   }
@@ -47,7 +47,6 @@ export default async function CoverLetterPage({
     .limit(1)
     .maybeSingle()
 
-  const app = application as Application
   const existingResult = aiResult
     ? ((aiResult as AIResult).result as CoverLetterResult)
     : null
@@ -55,9 +54,9 @@ export default async function CoverLetterPage({
   return (
     <CoverLetterClient
       applicationId={id}
-      company={app.company}
-      role={app.role}
-      jobDescription={app.job_description}
+      company={application.company}
+      role={application.role}
+      jobDescription={application.job_description}
       resumeText={resumeText}
       existingResult={existingResult}
     />

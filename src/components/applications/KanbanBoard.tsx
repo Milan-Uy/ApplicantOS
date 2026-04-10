@@ -10,7 +10,7 @@ import {
 } from "@hello-pangea/dnd"
 import { StatusBadge } from "@/components/ui/badge"
 import { updateApplicationStatus } from "@/app/(app)/applications/actions"
-import type { Application, ApplicationStatus } from "@/types/database"
+import type { ApplicationListItem, ApplicationStatus } from "@/types/database"
 import { Briefcase } from "lucide-react"
 
 const STATUSES: ApplicationStatus[] = [
@@ -20,13 +20,12 @@ const STATUSES: ApplicationStatus[] = [
   "interview",
   "offer",
   "rejected",
-  "ghosted",
 ]
 
 export function KanbanBoard({
   applications: initialApps,
 }: {
-  applications: Application[]
+  applications: ApplicationListItem[]
 }) {
   const [applications, setApplications] = useState(initialApps)
 
@@ -35,7 +34,7 @@ export function KanbanBoard({
       acc[status] = applications.filter((a) => a.status === status)
       return acc
     },
-    {} as Record<ApplicationStatus, Application[]>
+    {} as Record<ApplicationStatus, ApplicationListItem[]>
   )
 
   const onDragEnd = useCallback(
