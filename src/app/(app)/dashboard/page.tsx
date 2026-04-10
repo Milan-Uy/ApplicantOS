@@ -15,7 +15,7 @@ function StatCard({
   color?: string
 }) {
   return (
-    <div className="bg-card rounded-xl p-5 shadow-card border border-border flex flex-col gap-1 animate-fade-in">
+    <div className="bg-card rounded-xl p-4 sm:p-5 shadow-card border border-border flex flex-col gap-1 animate-fade-in">
       <span className="text-xs font-medium text-muted-fg uppercase tracking-wide">
         {label}
       </span>
@@ -82,7 +82,7 @@ export default async function DashboardPage() {
   const maxSource = sourceEntries[0]?.[1] ?? 1
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-24 lg:pb-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-24 lg:pb-8">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
@@ -92,7 +92,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatCard
           label="Total Applications"
           value={total}

@@ -24,7 +24,7 @@ export default async function ApplicationDetailPage({
   const application = app as Application
 
   return (
-    <div className="p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -43,22 +43,22 @@ export default async function ApplicationDetailPage({
             {application.company}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0">
           <Link
             href={`/applications/${id}/edit`}
-            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Edit
           </Link>
           <Link
             href={`/applications/${id}/resume`}
-            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
           >
             Optimize Resume
           </Link>
           <Link
             href={`/applications/${id}/cover-letter`}
-            className="px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-semibold hover:bg-accent/90 transition-colors"
+            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-semibold hover:bg-accent/90 transition-colors"
           >
             Cover Letter
           </Link>

@@ -84,11 +84,11 @@ export function KanbanBoard({
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 overflow-x-auto pb-4 -mx-6 px-6 lg:-mx-8 lg:px-8">
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         {STATUSES.map((status) => (
           <Droppable key={status} droppableId={status}>
             {(provided, snapshot) => (
-              <div className="flex flex-col gap-2 min-w-[240px] w-[240px] shrink-0">
+              <div className="flex flex-col gap-2 min-w-[200px] w-[200px] sm:min-w-[240px] sm:w-[240px] shrink-0">
                 <div className="flex items-center justify-between px-1">
                   <StatusBadge status={status} />
                   <span className="text-xs font-medium text-muted-fg tabular-nums">

@@ -104,7 +104,7 @@ export function CoverLetterClient({
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
       <div>
         <Link
           href={`/applications/${applicationId}`}
@@ -224,7 +224,7 @@ export function CoverLetterClient({
           <textarea
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
-            rows={16}
+            rows={10}
             className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/50 resize-y"
           />
         </div>

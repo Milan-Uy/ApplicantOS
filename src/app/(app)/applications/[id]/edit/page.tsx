@@ -61,7 +61,7 @@ export default async function EditApplicationPage({
   const toDateTimeInput = (val: string | null) => val?.slice(0, 16) ?? ""
 
   return (
-    <div className="p-6 lg:p-8 max-w-2xl mx-auto w-full">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto w-full">
       <Link
         href={`/applications/${id}`}
         className="inline-flex items-center gap-1.5 text-sm text-muted-fg hover:text-foreground transition-colors mb-4"

@@ -89,10 +89,10 @@ function ListView({ applications }: { applications: Application[] }) {
             <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wide">
               Status
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wide">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wide">
               Applied
             </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wide">
+            <th className="hidden sm:table-cell px-4 py-3 text-left text-xs font-semibold text-muted-fg uppercase tracking-wide">
               Source
             </th>
           </tr>
@@ -115,12 +115,12 @@ function ListView({ applications }: { applications: Application[] }) {
               <td className="px-4 py-3">
                 <StatusBadge status={app.status} />
               </td>
-              <td className="px-4 py-3 text-muted-fg">
+              <td className="hidden sm:table-cell px-4 py-3 text-muted-fg">
                 {app.applied_at
                   ? new Date(app.applied_at).toLocaleDateString()
                   : "—"}
               </td>
-              <td className="px-4 py-3 text-muted-fg capitalize">
+              <td className="hidden sm:table-cell px-4 py-3 text-muted-fg capitalize">
                 {app.source?.replace("_", " ") ?? "—"}
               </td>
             </tr>

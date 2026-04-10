@@ -54,7 +54,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center px-6 pt-24 pb-16 max-w-3xl mx-auto">
-        <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-balance">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-balance">
           Land your next role,
           <br className="hidden sm:block" /> not lost in spreadsheets
         </h1>

@@ -73,7 +73,7 @@ export function ResumeOptimizerClient({
         : "bg-destructive"
 
   return (
-    <div className="p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full space-y-6">
       <div>
         <Link
           href={`/applications/${applicationId}`}
@@ -130,7 +130,7 @@ export function ResumeOptimizerClient({
               Match Score
             </h2>
             <div className="flex items-end gap-3 mb-3">
-              <span className={cn("text-5xl font-bold", scoreColor)}>
+              <span className={cn("text-4xl sm:text-5xl font-bold", scoreColor)}>
                 {result.matchScore}
               </span>
               <span className="text-muted-fg text-lg mb-1">/ 100</span>
