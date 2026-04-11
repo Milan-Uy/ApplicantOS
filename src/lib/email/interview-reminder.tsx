@@ -1,5 +1,3 @@
-import React from "react"
-
 interface Props {
   company: string
   role: string
@@ -23,7 +21,7 @@ export function InterviewReminderEmail({
         for <strong>{interviewDate}</strong>.
       </p>
       <p style={{ fontSize: 15, lineHeight: 1.6, color: "#374151" }}>
-        Make sure you're prepared — review the job description, your tailored resume, and cover letter.
+        Make sure you&apos;re prepared — review the job description, your tailored resume, and cover letter.
       </p>
       <a
         href={applicationUrl}

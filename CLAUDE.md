@@ -54,6 +54,7 @@ src/
 │   │   │   ├── new/page.tsx            # Add new application
 │   │   │   └── [id]/
 │   │   │       ├── page.tsx            # Application detail + notes
+│   │   │       ├── edit/page.tsx       # Edit application
 │   │   │       ├── resume/
 │   │   │       │   ├── page.tsx        # AI resume optimization results
 │   │   │       │   └── client.tsx
@@ -99,12 +100,13 @@ src/
 
 ## Key Patterns
 
+- **Security (API routes):** Guard S3 keys with `s3Key.startsWith(\`resumes/${user.id}/\`)` before S3 reads/writes. Add `.eq("user_id", user.id)` to all Supabase mutations (defense-in-depth over RLS). Cap AI route text inputs at 50 KB. Whitelist `application/pdf` + DOCX MIME on upload. Use `crypto.timingSafeEqual` for cron secret comparison.
 - **Auth flow:** Middleware redirects unauthed users to `/login`, authed to `/dashboard`. Root `/` shows landing page for unauthed, redirects to `/dashboard` for authed.
 - **Supabase clients:** `client.ts` for browser, `server.ts` for RSC/actions. Cookie-based sessions.
 - **Server actions:** Mutations use `revalidatePath` + `redirect` pattern.
 - **Resume upload:** Client → `POST /api/upload` (get presigned URL) → upload direct to S3 → `POST /api/parse-resume` (extract text) → editable preview → save to DB.
 - **AI:** Vercel AI SDK with Gemini 2.5 Flash. `generateObject()` with Zod schemas for resume optimizer (parallel via `Promise.all`), `generateText()` for cover letter.
-- **Kanban:** `@hello-pangea/dnd` for drag-and-drop between status columns. Status update via server action on drop.
+- **Kanban:** `@hello-pangea/dnd` for drag-and-drop between status columns. Uses React 19 `useOptimistic` — `initialApps` prop auto-syncs, revert is automatic on server error.
 
 ## Database Tables
 
@@ -114,6 +116,10 @@ src/
 - `notifications` — in-app notifications from n8n webhooks (Phase 3)
 
 All tables have RLS enabled — users can only access their own rows.
+
+## Known Lint Issues
+
+`npm run lint` has 2 pre-existing errors in `app/api/pdf/cover-letter/route.tsx` and `lib/email/interview-reminder.tsx` — unrelated to app features, leave them.
 
 ## MVP Roadmap (7 Increments)
 
@@ -131,4 +137,4 @@ All tables have RLS enabled — users can only access their own rows.
 
 ## Design
 
-Dark theme · Blue primary · shadcn/ui base-nova
+Dark theme · Linear indigo (#5e6ad2) primary · Inter Variable with cv01/ss03 · Linear-inspired tokens

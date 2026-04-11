@@ -8,17 +8,19 @@ const badgeVariants = cva(
       variant: {
         default: "bg-primary/10 text-primary",
         wishlist:
-          "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
-        applied: "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300",
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-muted-fg",
+        applied:
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-[#5e6ad2]",
         phone_screen:
-          "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-amber-400",
         interview:
-          "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-orange-400",
         offer:
-          "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300",
-        rejected: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-[#10b981]",
+        rejected:
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-red-400",
         ghosted:
-          "bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400",
+          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-muted-fg",
         outline: "border border-border text-foreground",
       },
     },

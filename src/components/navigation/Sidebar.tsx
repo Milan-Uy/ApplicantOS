@@ -36,9 +36,9 @@ export function Sidebar() {
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-150",
+                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150",
                 active
-                  ? "bg-primary/10 text-primary"
+                  ? "bg-white/[0.05] text-foreground"
                   : "text-muted-fg hover:bg-muted hover:text-foreground"
               )}
             >
@@ -52,7 +52,7 @@ export function Sidebar() {
       {/* User footer */}
       <div className="p-3 border-t border-border">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors cursor-pointer">
-          <div className="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center text-xs font-semibold text-primary">
+          <div className="w-7 h-7 rounded-full bg-white/[0.08] flex items-center justify-center text-xs font-semibold text-foreground">
             U
           </div>
           <span className="text-sm font-medium text-muted-fg truncate">

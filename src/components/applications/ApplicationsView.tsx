@@ -32,7 +32,7 @@ export function ApplicationsView({
           className={cn(
             "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
             view === "kanban"
-              ? "bg-primary text-primary-fg"
+              ? "bg-white/[0.08] text-foreground"
               : "text-muted-fg hover:text-foreground hover:bg-muted"
           )}
         >
@@ -43,7 +43,7 @@ export function ApplicationsView({
           className={cn(
             "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
             view === "list"
-              ? "bg-primary text-primary-fg"
+              ? "bg-white/[0.08] text-foreground"
               : "text-muted-fg hover:text-foreground hover:bg-muted"
           )}
         >
@@ -75,7 +75,7 @@ function ListView({ applications }: { applications: ApplicationListItem[] }) {
         </p>
         <Link
           href="/applications/new"
-          className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="mt-4 px-4 py-2 rounded-lg bg-white/[0.08] text-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           Add Application
         </Link>
@@ -84,7 +84,7 @@ function ListView({ applications }: { applications: ApplicationListItem[] }) {
   }
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card overflow-x-auto">
+    <div className="bg-card rounded-lg border border-border shadow-card overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-border">

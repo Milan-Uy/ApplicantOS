@@ -54,7 +54,7 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="flex flex-col items-center text-center px-6 pt-24 pb-16 max-w-3xl mx-auto">
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-balance">
+        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-medium tracking-[-0.04em] leading-none text-balance">
           Land your next role,
           <br className="hidden sm:block" /> not lost in spreadsheets
         </h1>
@@ -65,7 +65,7 @@ export default function LandingPage() {
         <div className="mt-8 flex gap-3">
           <Link
             href="/signup"
-            className="px-6 py-3 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
+            className="px-4 py-2 rounded-md bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
           >
             Get Started — it&apos;s free
           </Link>
@@ -78,10 +78,10 @@ export default function LandingPage() {
           {features.map((f) => (
             <div
               key={f.title}
-              className="rounded-lg border border-border bg-card p-6 shadow-card"
+              className="rounded-lg border border-border bg-white/[0.02] p-6"
             >
-              <div className="w-10 h-10 rounded-md bg-primary/10 flex items-center justify-center mb-3">
-                <f.icon className="w-5 h-5 text-primary" />
+              <div className="w-10 h-10 rounded-md bg-white/[0.05] flex items-center justify-center mb-3">
+                <f.icon className="w-5 h-5" />
               </div>
               <h3 className="font-semibold text-card-fg">{f.title}</h3>
               <p className="mt-1 text-sm text-muted-fg">{f.description}</p>
@@ -98,7 +98,7 @@ export default function LandingPage() {
         </p>
         <Link
           href="/signup"
-          className="inline-block mt-6 px-6 py-3 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
+          className="inline-block mt-6 px-4 py-2 rounded-md bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
         >
           Create free account
         </Link>

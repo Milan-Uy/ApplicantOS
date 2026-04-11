@@ -93,7 +93,7 @@ export function KanbanBoard({
                   ref={provided.innerRef}
                   {...provided.droppableProps}
                   className={`flex flex-col gap-2 min-h-[120px] rounded-lg p-2 transition-colors ${
-                    snapshot.isDraggingOver ? "bg-primary/5" : ""
+                    snapshot.isDraggingOver ? "bg-white/[0.03]" : ""
                   }`}
                 >
                   {grouped[status].map((app, index) => (
@@ -107,7 +107,7 @@ export function KanbanBoard({
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`bg-card rounded-xl border border-border shadow-card p-4 cursor-grab active:cursor-grabbing hover:shadow-card-hover transition-shadow duration-150 ${
+                          className={`bg-card rounded-lg border border-border shadow-card p-4 cursor-grab active:cursor-grabbing hover:shadow-card-hover transition-shadow duration-150 ${
                             snapshot.isDragging ? "shadow-card-hover" : ""
                           }`}
                         >
@@ -119,7 +119,7 @@ export function KanbanBoard({
                               {app.company}
                             </p>
                             {app.salary_min && (
-                              <p className="text-xs text-accent font-medium mt-2">
+                              <p className="text-xs text-[#10b981] font-medium mt-2">
                                 ${app.salary_min.toLocaleString()}
                                 {app.salary_max
                                   ? `–$${app.salary_max.toLocaleString()}`
@@ -127,7 +127,7 @@ export function KanbanBoard({
                               </p>
                             )}
                             {app.interview_date && (
-                              <p className="mt-2 text-xs text-orange-600">
+                              <p className="mt-2 text-xs text-amber-400">
                                 Interview:{" "}
                                 {new Date(
                                   app.interview_date
