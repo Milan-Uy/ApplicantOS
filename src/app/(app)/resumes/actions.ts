@@ -16,6 +16,10 @@ export async function saveDocument(formData: FormData) {
   const s3Key = formData.get("s3Key") as string
   const extractedText = formData.get("extractedText") as string
 
+  if (!s3Key.startsWith(`resumes/${user.id}/`)) {
+    throw new Error("Forbidden")
+  }
+
   const { error } = await supabase.from("documents").insert({
     user_id: user.id,
     type: "resume" as const,

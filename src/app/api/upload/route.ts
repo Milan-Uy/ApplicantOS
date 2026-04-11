@@ -27,6 +27,14 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  const ALLOWED_TYPES = [
+    "application/pdf",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  ]
+  if (!ALLOWED_TYPES.includes(contentType)) {
+    return NextResponse.json({ error: "Unsupported file type. Use PDF or DOCX." }, { status: 400 })
+  }
+
   const key = `resumes/${user.id}/${randomUUID()}/${filename}`
 
   const command = new PutObjectCommand({

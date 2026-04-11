@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { resend } from "@/lib/resend"
 import { InterviewReminderEmail } from "@/lib/email/interview-reminder"
@@ -12,7 +13,9 @@ const supabaseAdmin = createClient(
 
 export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const expected = Buffer.from(`Bearer ${process.env.CRON_SECRET}`)
+  const actual = Buffer.from(authHeader ?? "")
+  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 

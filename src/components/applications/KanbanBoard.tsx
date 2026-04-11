@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useOptimistic, useTransition } from "react"
 import Link from "next/link"
 import {
   DragDropContext,
@@ -27,39 +27,34 @@ export function KanbanBoard({
 }: {
   applications: ApplicationListItem[]
 }) {
-  const [applications, setApplications] = useState(initialApps)
+  const [optimisticApps, updateOptimistic] = useOptimistic(
+    initialApps,
+    (state, { id, status }: { id: string; status: ApplicationStatus }) =>
+      state.map((a) => (a.id === id ? { ...a, status } : a))
+  )
+  const [, startTransition] = useTransition()
 
   const grouped = STATUSES.reduce(
     (acc, status) => {
-      acc[status] = applications.filter((a) => a.status === status)
+      acc[status] = optimisticApps.filter((a) => a.status === status)
       return acc
     },
     {} as Record<ApplicationStatus, ApplicationListItem[]>
   )
 
-  const onDragEnd = useCallback(
-    async (result: DropResult) => {
-      const { draggableId, destination } = result
-      if (!destination) return
+  const onDragEnd = (result: DropResult) => {
+    const { draggableId, destination } = result
+    if (!destination) return
 
-      const newStatus = destination.droppableId as ApplicationStatus
+    const newStatus = destination.droppableId as ApplicationStatus
 
-      // Optimistic update
-      setApplications((prev) =>
-        prev.map((a) => (a.id === draggableId ? { ...a, status: newStatus } : a))
-      )
+    startTransition(async () => {
+      updateOptimistic({ id: draggableId, status: newStatus })
+      await updateApplicationStatus(draggableId, newStatus)
+    })
+  }
 
-      try {
-        await updateApplicationStatus(draggableId, newStatus)
-      } catch {
-        // Revert on error
-        setApplications(initialApps)
-      }
-    },
-    [initialApps]
-  )
-
-  if (applications.length === 0) {
+  if (optimisticApps.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
         <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">

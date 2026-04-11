@@ -25,33 +25,46 @@ export async function POST(request: NextRequest) {
     )
   }
 
+  if (!s3Key.startsWith(`resumes/${user.id}/`)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
+
   const command = new GetObjectCommand({
     Bucket: process.env.AWS_S3_BUCKET!,
     Key: s3Key,
   })
 
   const response = await s3.send(command)
-  const bytes = await response.Body!.transformToByteArray()
+
+  if (response.ContentLength && response.ContentLength > 10 * 1024 * 1024) {
+    return NextResponse.json({ error: "File too large (max 10 MB)" }, { status: 400 })
+  }
 
   let text = ""
 
-  if (contentType === "application/pdf") {
-    const { extractText } = await import("unpdf")
-    const { text: pages } = await extractText(bytes, { mergePages: true })
-    text = pages
-  } else if (
-    contentType ===
-    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-  ) {
-    const buffer = Buffer.from(bytes)
-    const mammoth = await import("mammoth")
-    const result = await mammoth.extractRawText({ buffer })
-    text = result.value
-  } else {
-    return NextResponse.json(
-      { error: "Unsupported file type. Use PDF or DOCX." },
-      { status: 400 }
-    )
+  try {
+    const bytes = await response.Body!.transformToByteArray()
+
+    if (contentType === "application/pdf") {
+      const { extractText } = await import("unpdf")
+      const { text: pages } = await extractText(bytes, { mergePages: true })
+      text = pages
+    } else if (
+      contentType ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ) {
+      const buffer = Buffer.from(bytes)
+      const mammoth = await import("mammoth")
+      const result = await mammoth.extractRawText({ buffer })
+      text = result.value
+    } else {
+      return NextResponse.json(
+        { error: "Unsupported file type. Use PDF or DOCX." },
+        { status: 400 }
+      )
+    }
+  } catch {
+    return NextResponse.json({ error: "Failed to parse file" }, { status: 400 })
   }
 
   return NextResponse.json({ text })

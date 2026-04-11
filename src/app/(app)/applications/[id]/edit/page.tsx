@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { updateApplication } from "../../actions"
 import { SubmitButton } from "../../new/submit-button"
-import type { Application } from "@/types/database"
 
 const STATUSES = [
   { value: "wishlist", label: "Wishlist" },
@@ -42,19 +41,20 @@ export default async function EditApplicationPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const [{ data: app }, { data: documents }] = await Promise.all([
-    supabase.from("applications").select("*").eq("id", id).single(),
+  const { data: { user } } = await supabase.auth.getUser()
+  const [{ data: application }, { data: documents }] = await Promise.all([
+    supabase.from("applications").select("id, status, source, role, company, url, salary_min, salary_max, location, job_description, notes, contact_name, contact_email, resume_id, interview_date, applied_at, follow_up_at").eq("id", id).eq("user_id", user!.id).single(),
     supabase
       .from("documents")
       .select("id, label, filename")
       .eq("type", "resume")
+      .eq("user_id", user!.id)
       .order("created_at", { ascending: false }),
   ])
 
-  if (!app) notFound()
+  if (!application) notFound()
   const resumes = documents ?? []
 
-  const application = app as Application
   const action = updateApplication.bind(null, id)
 
   const toDateInput = (val: string | null) => val?.slice(0, 10) ?? ""

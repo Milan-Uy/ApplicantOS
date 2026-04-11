@@ -3,7 +3,6 @@ import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/ui/badge"
 import { DeleteApplicationButton } from "@/components/applications/DeleteApplicationButton"
-import type { Application } from "@/types/database"
 import { cn } from "@/lib/utils"
 
 export default async function ApplicationDetailPage({
@@ -13,15 +12,15 @@ export default async function ApplicationDetailPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: app } = await supabase
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data: application } = await supabase
     .from("applications")
-    .select("*")
+    .select("id, status, source, role, company, job_description, notes, url, location, salary_min, salary_max, applied_at, interview_date, follow_up_at, contact_name, contact_email")
     .eq("id", id)
+    .eq("user_id", user!.id)
     .single()
 
-  if (!app) notFound()
-
-  const application = app as Application
+  if (!application) notFound()
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-6">

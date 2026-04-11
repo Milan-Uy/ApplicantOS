@@ -22,6 +22,11 @@ export async function POST(request: Request) {
     )
   }
 
+  const MAX = 50 * 1024
+  if (resumeText.length > MAX || jobDescription.length > MAX) {
+    return NextResponse.json({ error: "Input too large" }, { status: 400 })
+  }
+
   // Verify user owns this application
   const { data: application, error: appError } = await supabase
     .from("applications")
