@@ -17,7 +17,7 @@ export default function SignupPage() {
   return (
     <div className="min-h-dvh flex">
       {/* Left brand panel — desktop only */}
-      <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 bg-sky-900 p-12 text-white">
+      <div className="hidden lg:flex flex-col justify-between w-[420px] shrink-0 bg-muted p-12 text-white">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center">
             <Cpu className="w-5 h-5 text-white" />

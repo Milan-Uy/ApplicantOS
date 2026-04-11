@@ -29,9 +29,9 @@ export function ResumeCard({ document }: ResumeCardProps) {
   })
 
   return (
-    <div className="bg-card rounded-xl border border-border shadow-card p-4 flex flex-col gap-3">
+    <div className="bg-card rounded-lg border border-border shadow-card p-4 flex flex-col gap-3">
       <div className="flex items-start gap-3">
-        <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
+        <div className="p-2 rounded-lg bg-white/[0.05] text-muted-fg shrink-0">
           <FileText className="w-5 h-5" />
         </div>
         <div className="min-w-0 flex-1">

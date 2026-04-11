@@ -41,15 +41,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 })
   }
 
+  const pdfElement = (
+    <CoverLetterPDF
+      coverLetter={coverLetter}
+      company={application.company}
+      role={application.role}
+    />
+  )
+
   try {
     // Render PDF
-    const pdfBuffer = await renderToBuffer(
-      <CoverLetterPDF
-        coverLetter={coverLetter}
-        company={application.company}
-        role={application.role}
-      />
-    )
+    const pdfBuffer = await renderToBuffer(pdfElement)
 
     // Upload to S3
     const filename = `${application.company.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-cover-letter.pdf`
