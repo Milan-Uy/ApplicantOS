@@ -19,6 +19,8 @@ npm run lint            # ESLint
 npx shadcn@latest add [component]  # Add shadcn/ui component
 ```
 
+**Shell note:** Bash commands fail on paths containing `(app)` — use the `Read`/`Glob`/`Grep` tools directly for `src/app/(app)/...` paths.
+
 ## Environment
 
 `.env.local` requires:
@@ -48,8 +50,10 @@ src/
 │   ├── globals.css
 │   ├── (app)/                          # Authenticated (middleware-protected)
 │   │   ├── dashboard/page.tsx          # Stats, recent activity, upcoming interviews
+│   │   │   └── loading.tsx             # Shimmer skeleton
 │   │   ├── applications/
 │   │   │   ├── page.tsx                # Kanban board + list view toggle
+│   │   │   ├── loading.tsx             # Shimmer skeleton
 │   │   │   ├── actions.ts              # Server actions for applications
 │   │   │   ├── new/page.tsx            # Add new application
 │   │   │   └── [id]/
@@ -63,8 +67,11 @@ src/
 │   │   │           └── client.tsx
 │   │   ├── resumes/
 │   │   │   ├── page.tsx                # Resume library
-│   │   │   └── actions.ts
-│   │   ├── settings/page.tsx
+│   │   │   ├── actions.ts
+│   │   │   └── loading.tsx             # Shimmer skeleton
+│   │   ├── settings/
+│   │   │   ├── page.tsx
+│   │   │   └── loading.tsx             # Shimmer skeleton
 │   │   └── layout.tsx                  # Sidebar nav
 │   ├── (auth)/
 │   │   ├── login/page.tsx
@@ -100,6 +107,7 @@ src/
 
 ## Key Patterns
 
+- **Loading skeletons:** Each `(app)` route has `loading.tsx` for instant shimmer on navigation. Uses `Skeleton` from `components/ui/skeleton.tsx` (custom `animate-shimmer` keyframe in `globals.css`). Pattern: define reusable `*Skeleton` sub-components within the file that mirror the real page layout.
 - **Security (API routes):** Guard S3 keys with `s3Key.startsWith(\`resumes/${user.id}/\`)` before S3 reads/writes. Add `.eq("user_id", user.id)` to all Supabase mutations (defense-in-depth over RLS). Cap AI route text inputs at 50 KB. Whitelist `application/pdf` + DOCX MIME on upload. Use `crypto.timingSafeEqual` for cron secret comparison.
 - **Auth flow:** Middleware redirects unauthed users to `/login`, authed to `/dashboard`. Root `/` shows landing page for unauthed, redirects to `/dashboard` for authed.
 - **Supabase clients:** `client.ts` for browser, `server.ts` for RSC/actions. Cookie-based sessions.

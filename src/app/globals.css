@@ -4,6 +4,7 @@
   /* Brand — the only chromatic color in the system */
   --color-primary: #5e6ad2;
   --color-primary-fg: #ffffff;
+  --color-primary-hover: #6c77d6;
   --color-secondary: #7170ff;
   --color-secondary-fg: #ffffff;
   --color-accent: #7170ff;
@@ -14,23 +15,34 @@
   --color-foreground: #f7f8f8;
   --color-muted: #0f1011;
   --color-muted-fg: #8a8f98;
+  --color-fg-subtle: #62666d;
   --color-card: #0f1011;
   --color-card-fg: #f7f8f8;
   --color-sidebar: #0f1011;
+  --color-surface-2: #16181a;
+  --color-surface-3: #1c1e21;
 
   /* Borders — semi-transparent white, never solid dark */
   --color-border: rgba(255, 255, 255, 0.08);
+  --color-border-strong: rgba(255, 255, 255, 0.12);
+  --color-border-subtle: rgba(255, 255, 255, 0.05);
   --color-input: rgba(255, 255, 255, 0.08);
   --color-ring: #5e6ad2;
 
   --color-destructive: #ef4444;
   --color-destructive-fg: #ffffff;
 
+  /* Tinted fills */
+  --tint-02: rgba(255, 255, 255, 0.02);
+  --tint-03: rgba(255, 255, 255, 0.03);
+
   /* Radius — Linear's scale */
   --radius-sm: 0.125rem;
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
   --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-full: 9999px;
 
   /* Shadows — ring + inset only on dark surfaces */
   --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -40,12 +52,76 @@
     rgba(0, 0, 0, 0.07) 0px 1px 1px,
     rgba(0, 0, 0, 0.08) 0px 0px 1px,
     rgba(0, 0, 0, 0.4) 0px 8px 24px;
+  --shadow-glow-primary:
+    0 0 0 1px rgba(94, 106, 210, 0.5),
+    0 1px 0 rgba(255, 255, 255, 0.15) inset,
+    0 8px 24px -8px rgba(94, 106, 210, 0.5);
+
+  /* Spacing scale */
+  --space-0_5: 0.125rem;
+  --space-1:   0.25rem;
+  --space-1_5: 0.375rem;
+  --space-2:   0.5rem;
+  --space-3:   0.75rem;
+  --space-4:   1rem;
+  --space-5:   1.25rem;
+  --space-6:   1.5rem;
+  --space-8:   2rem;
+  --space-10:  2.5rem;
+  --space-12:  3rem;
+  --space-16:  4rem;
+  --space-24:  6rem;
+
+  /* Type scale */
+  --text-2xs:  0.6875rem;
+  --text-xs:   0.75rem;
+  --text-sm:   0.8125rem;
+  --text-base: 0.875rem;
+  --text-md:   1rem;
+  --text-lg:   1.125rem;
+  --text-xl:   1.25rem;
+  --text-2xl:  1.5rem;
+  --text-3xl:  1.875rem;
+  --text-4xl:  2.25rem;
+  --text-5xl:  3rem;
+  --text-6xl:  3.75rem;
+  --text-7xl:  4.5rem;
+
+  --leading-tight:   1.1;
+  --leading-snug:    1.25;
+  --leading-normal:  1.5;
+  --leading-relaxed: 1.65;
+
+  --tracking-display:   -0.04em;
+  --tracking-tight:     -0.02em;
+  --tracking-normal:    0;
+  --tracking-wide:      0.05em;
+  --tracking-uppercase: 0.06em;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* Motion */
+  --ease-out:      cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out:   cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+
+  /* Layout */
+  --sidebar-width:  240px;
+  --header-height:  64px;
+  --container-max:  1152px;
+  --content-max:    768px;
 
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   --animate-shimmer: shimmer 1.5s infinite linear;
   --animate-fade-in: fade-in 200ms ease-out;
+  --animate-blink: blink 1s steps(2) infinite;
 
   @keyframes shimmer {
     0% { background-position: -200% 0; }
@@ -55,6 +131,10 @@
   @keyframes fade-in {
     0% { opacity: 0; transform: translateY(4px); }
     100% { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes blink {
+    50% { opacity: 0; }
   }
 }
 
