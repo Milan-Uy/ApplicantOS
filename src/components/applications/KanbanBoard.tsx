@@ -127,10 +127,18 @@ export function KanbanBoard({
                             </p>
                             {app.salary_min && (
                               <p className="text-xs text-[#10b981] font-medium mt-2">
-                                ${app.salary_min.toLocaleString()}
-                                {app.salary_max
-                                  ? `–$${app.salary_max.toLocaleString()}`
-                                  : "+"}
+                                {[
+                                  app.salary_currency,
+                                  (app.salary_min >= 1000
+                                    ? `${Math.round(app.salary_min / 1000)}k`
+                                    : app.salary_min.toLocaleString()) +
+                                    (app.salary_max
+                                      ? `–${app.salary_max >= 1000 ? `${Math.round(app.salary_max / 1000)}k` : app.salary_max.toLocaleString()}`
+                                      : "+"),
+                                  app.salary_period === "hourly" ? "/hr" : app.salary_period === "monthly" ? "/mo" : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
                               </p>
                             )}
                             {app.interview_date && (

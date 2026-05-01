@@ -25,6 +25,8 @@ export async function createApplication(formData: FormData) {
     salary_max: formData.get("salary_max")
       ? Number(formData.get("salary_max"))
       : null,
+    salary_currency: (formData.get("salary_currency") as string) || null,
+    salary_period: (formData.get("salary_period") as string) || null,
     location: (formData.get("location") as string) || null,
     job_description: (formData.get("job_description") as string) || null,
     notes: (formData.get("notes") as string) || null,
@@ -63,6 +65,8 @@ export async function updateApplication(id: string, formData: FormData) {
       salary_max: formData.get("salary_max")
         ? Number(formData.get("salary_max"))
         : null,
+      salary_currency: (formData.get("salary_currency") as string) || null,
+      salary_period: (formData.get("salary_period") as string) || null,
       location: (formData.get("location") as string) || null,
       job_description: (formData.get("job_description") as string) || null,
       notes: (formData.get("notes") as string) || null,

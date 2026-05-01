@@ -16,7 +16,7 @@ export default async function ApplicationDetailPage({
   const { data: { user } } = await supabase.auth.getUser()
   const { data: application } = await supabase
     .from("applications")
-    .select("id, status, source, role, company, job_description, notes, url, location, salary_min, salary_max, applied_at, interview_date, follow_up_at, contact_name, contact_email")
+    .select("id, status, source, role, company, job_description, notes, url, location, salary_min, salary_max, salary_currency, salary_period, applied_at, interview_date, follow_up_at, contact_name, contact_email")
     .eq("id", id)
     .eq("user_id", user!.id)
     .single()
@@ -117,7 +117,16 @@ export default async function ApplicationDetailPage({
               label="Salary"
               value={
                 application.salary_min
-                  ? `$${application.salary_min.toLocaleString()}${application.salary_max ? `–$${application.salary_max.toLocaleString()}` : "+"}`
+                  ? [
+                      application.salary_currency,
+                      application.salary_min.toLocaleString() +
+                        (application.salary_max
+                          ? `–${application.salary_max.toLocaleString()}`
+                          : "+"),
+                      application.salary_period === "hourly" ? "/hr" : application.salary_period === "monthly" ? "/mo" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" ")
                   : "—"
               }
             />
