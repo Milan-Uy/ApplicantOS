@@ -14,7 +14,7 @@ export async function createApplication(formData: FormData) {
 
   const { error } = await supabase.from("applications").insert({
     user_id: user.id,
-    company: formData.get("company") as string,
+    company: (formData.get("company") as string) || null,
     role: formData.get("role") as string,
     url: (formData.get("url") as string) || null,
     status: (formData.get("status") as ApplicationStatus) || "wishlist",
@@ -52,7 +52,7 @@ export async function updateApplication(id: string, formData: FormData) {
   const { error } = await supabase
     .from("applications")
     .update({
-      company: formData.get("company") as string,
+      company: (formData.get("company") as string) || null,
       role: formData.get("role") as string,
       url: (formData.get("url") as string) || null,
       status: (formData.get("status") as ApplicationStatus) || "wishlist",
