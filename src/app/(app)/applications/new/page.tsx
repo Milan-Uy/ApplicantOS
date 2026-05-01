@@ -209,7 +209,7 @@ export default async function NewApplicationPage() {
           <Field label="Interview Date">
             <input
               name="interview_date"
-              type="datetime-local"
+              type="date"
               className={inputClass}
             />
           </Field>
