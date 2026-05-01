@@ -65,10 +65,9 @@ export default async function NewApplicationPage() {
 
       <form action={createApplication} className="mt-8 flex flex-col gap-5">
         <div className="grid sm:grid-cols-2 gap-5">
-          <Field label="Company *">
+          <Field label="Company">
             <input
               name="company"
-              required
               placeholder="e.g. Acme Inc."
               className={inputClass}
             />
