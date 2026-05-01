@@ -39,7 +39,7 @@ export default async function ApplicationDetailPage({
             <StatusBadge status={application.status} />
             {application.source && (
               <span className="text-xs text-muted-fg capitalize">
-                {application.source.replace("_", " ")}
+                {application.source.replace(/_/g, " ")}
               </span>
             )}
           </div>
