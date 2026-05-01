@@ -12,6 +12,7 @@ export type ApplicationSource =
   | "indeed"
   | "referral"
   | "company_site"
+  | "online_jobs_ph"
   | "other"
 
 export type DocumentType = "resume" | "cover_letter"

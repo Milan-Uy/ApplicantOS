@@ -19,6 +19,7 @@ const SOURCES = [
   { value: "indeed", label: "Indeed" },
   { value: "referral", label: "Referral" },
   { value: "company_site", label: "Company Site" },
+  { value: "online_jobs_ph", label: "OnlineJobsPH" },
   { value: "other", label: "Other" },
 ]
 
