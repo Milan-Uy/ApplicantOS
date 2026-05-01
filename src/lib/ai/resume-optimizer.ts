@@ -34,12 +34,14 @@ export async function optimizeResume(
       output: Output.object({ schema: keywordSchema }),
       system: KEYWORD_MATCHER_PROMPT,
       prompt: userMessage,
+      maxRetries: 3,
     }),
     generateText({
       model,
       output: Output.object({ schema: bulletSchema }),
       system: BULLET_REWRITER_PROMPT,
       prompt: userMessage,
+      maxRetries: 3,
     }),
   ])
 

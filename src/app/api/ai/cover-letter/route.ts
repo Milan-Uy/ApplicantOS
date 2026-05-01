@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { generateCoverLetter } from "@/lib/ai/cover-letter"
+import { checkRateLimit } from "@/lib/rate-limit"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -11,6 +12,18 @@ export async function POST(request: Request) {
 
   if (!user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  const { ok, retryAfterSec } = checkRateLimit(user.id, {
+    limit: 10,
+    windowMs: 60_000,
+    bucket: "ai",
+  })
+  if (!ok) {
+    return NextResponse.json(
+      { error: "Rate limit exceeded. Try again shortly." },
+      { status: 429, headers: { "Retry-After": String(retryAfterSec) } }
+    )
   }
 
   const { jobDescription, resumeText, applicationId, whyThisRole, tone } =
