@@ -58,7 +58,6 @@ export default async function EditApplicationPage({
   const action = updateApplication.bind(null, id)
 
   const toDateInput = (val: string | null) => val?.slice(0, 10) ?? ""
-  const toDateTimeInput = (val: string | null) => val?.slice(0, 16) ?? ""
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-2xl mx-auto w-full">
@@ -226,8 +225,8 @@ export default async function EditApplicationPage({
           <Field label="Interview Date">
             <input
               name="interview_date"
-              type="datetime-local"
-              defaultValue={toDateTimeInput(application.interview_date)}
+              type="date"
+              defaultValue={toDateInput(application.interview_date)}
               className={inputClass}
             />
           </Field>
