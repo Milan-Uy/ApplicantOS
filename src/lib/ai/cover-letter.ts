@@ -24,6 +24,7 @@ export async function generateCoverLetter(params: {
     model,
     system: COVER_LETTER_PROMPT,
     prompt,
+    maxRetries: 3,
   })
 
   return { coverLetter: text }
