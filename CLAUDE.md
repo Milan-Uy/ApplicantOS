@@ -99,6 +99,7 @@ src/
 │   │   ├── prompts/                    # System prompts + few-shot examples
 │   │   ├── resume-optimizer.ts         # generateObject() with Promise.all
 │   │   └── cover-letter.ts            # generateText()
+│   ├── rate-limit.ts                   # In-memory sliding-window limiter (10 req/min per user)
 │   └── utils.ts                        # cn() helper
 ├── types/
 │   └── database.ts                     # Supabase auto-generated types
@@ -109,11 +110,12 @@ src/
 
 - **Loading skeletons:** Each `(app)` route has `loading.tsx` for instant shimmer on navigation. Uses `Skeleton` from `components/ui/skeleton.tsx` (custom `animate-shimmer` keyframe in `globals.css`). Pattern: define reusable `*Skeleton` sub-components within the file that mirror the real page layout.
 - **Security (API routes):** Guard S3 keys with `s3Key.startsWith(\`resumes/${user.id}/\`)` before S3 reads/writes. Add `.eq("user_id", user.id)` to all Supabase mutations (defense-in-depth over RLS). Cap AI route text inputs at 50 KB. Whitelist `application/pdf` + DOCX MIME on upload. Use `crypto.timingSafeEqual` for cron secret comparison.
+- **Rate limiting (AI routes):** `lib/rate-limit.ts` — in-memory sliding-window, 10 req/min per user shared across both AI endpoints. Checked immediately after auth, returns 429 + `Retry-After`. Single-instance only; swap `Map` for Upstash Redis if multi-region.
 - **Auth flow:** Middleware redirects unauthed users to `/login`, authed to `/dashboard`. Root `/` shows landing page for unauthed, redirects to `/dashboard` for authed.
 - **Supabase clients:** `client.ts` for browser, `server.ts` for RSC/actions. Cookie-based sessions.
 - **Server actions:** Mutations use `revalidatePath` + `redirect` pattern.
 - **Resume upload:** Client → `POST /api/upload` (get presigned URL) → upload direct to S3 → `POST /api/parse-resume` (extract text) → editable preview → save to DB.
-- **AI:** Vercel AI SDK with Gemini 2.5 Flash. `generateObject()` with Zod schemas for resume optimizer (parallel via `Promise.all`), `generateText()` for cover letter.
+- **AI:** Vercel AI SDK with Gemini 2.5 Flash. `generateObject()` with Zod schemas for resume optimizer (parallel via `Promise.all`), `generateText()` for cover letter. All `generateText` calls use `maxRetries: 3` for exponential backoff on 429/5xx.
 - **Kanban:** `@hello-pangea/dnd` for drag-and-drop between status columns. Uses React 19 `useOptimistic` — `initialApps` prop auto-syncs, revert is automatic on server error.
 
 ## Database Tables
