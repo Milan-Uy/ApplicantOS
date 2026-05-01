@@ -138,7 +138,7 @@ function ListView({ applications }: { applications: ApplicationListItem[] }) {
                   : "—"}
               </td>
               <td className="hidden sm:table-cell px-4 py-3 text-muted-fg capitalize">
-                {app.source?.replace("_", " ") ?? "—"}
+                {app.source?.replace(/_/g, " ") ?? "—"}
               </td>
             </tr>
           ))}
