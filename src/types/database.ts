@@ -31,6 +31,8 @@ export interface Application {
   source: ApplicationSource | null
   salary_min: number | null
   salary_max: number | null
+  salary_currency: string | null
+  salary_period: string | null
   location: string | null
   job_description: string | null
   notes: string | null
@@ -55,6 +57,8 @@ export type ApplicationListItem = Pick<
   | "source"
   | "salary_min"
   | "salary_max"
+  | "salary_currency"
+  | "salary_period"
   | "interview_date"
   | "applied_at"
   | "updated_at"

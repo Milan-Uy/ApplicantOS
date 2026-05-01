@@ -43,7 +43,7 @@ export default async function EditApplicationPage({
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const [{ data: application }, { data: documents }] = await Promise.all([
-    supabase.from("applications").select("id, status, source, role, company, url, salary_min, salary_max, location, job_description, notes, contact_name, contact_email, resume_id, interview_date, applied_at, follow_up_at").eq("id", id).eq("user_id", user!.id).single(),
+    supabase.from("applications").select("id, status, source, role, company, url, salary_min, salary_max, salary_currency, salary_period, location, job_description, notes, contact_name, contact_email, resume_id, interview_date, applied_at, follow_up_at").eq("id", id).eq("user_id", user!.id).single(),
     supabase
       .from("documents")
       .select("id, label, filename")
@@ -156,6 +156,21 @@ export default async function EditApplicationPage({
               defaultValue={application.salary_max ?? ""}
               className={inputClass}
             />
+          </Field>
+          <Field label="Currency">
+            <select name="salary_currency" defaultValue={application.salary_currency ?? ""} className={inputClass}>
+              <option value="">—</option>
+              <option value="USD">USD</option>
+              <option value="PHP">PHP</option>
+              <option value="AUD">AUD</option>
+            </select>
+          </Field>
+          <Field label="Period">
+            <select name="salary_period" defaultValue={application.salary_period ?? ""} className={inputClass}>
+              <option value="">—</option>
+              <option value="monthly">Monthly</option>
+              <option value="hourly">Hourly</option>
+            </select>
           </Field>
         </div>
 

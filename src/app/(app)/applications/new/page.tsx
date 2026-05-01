@@ -149,6 +149,21 @@ export default async function NewApplicationPage() {
               className={inputClass}
             />
           </Field>
+          <Field label="Currency">
+            <select name="salary_currency" defaultValue="" className={inputClass}>
+              <option value="">—</option>
+              <option value="USD">USD</option>
+              <option value="PHP">PHP</option>
+              <option value="AUD">AUD</option>
+            </select>
+          </Field>
+          <Field label="Period">
+            <select name="salary_period" defaultValue="" className={inputClass}>
+              <option value="">—</option>
+              <option value="monthly">Monthly</option>
+              <option value="hourly">Hourly</option>
+            </select>
+          </Field>
         </div>
 
         <Field label="Job Description">
