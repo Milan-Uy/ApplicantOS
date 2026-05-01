@@ -11,7 +11,6 @@ const STATUSES = [
   { value: "interview", label: "Interview" },
   { value: "offer", label: "Offer" },
   { value: "rejected", label: "Rejected" },
-  { value: "ghosted", label: "Ghosted" },
 ]
 
 const SOURCES = [
@@ -71,15 +70,14 @@ export default async function EditApplicationPage({
       </Link>
       <h1 className="text-2xl font-bold text-foreground">Edit Application</h1>
       <p className="text-sm text-muted-fg mt-0.5">
-        {application.role} at {application.company}
+        {application.role}{application.company ? ` at ${application.company}` : ""}
       </p>
 
       <form action={action} className="mt-8 flex flex-col gap-5">
         <div className="grid sm:grid-cols-2 gap-5">
-          <Field label="Company *">
+          <Field label="Company">
             <input
               name="company"
-              required
               defaultValue={application.company}
               className={inputClass}
             />

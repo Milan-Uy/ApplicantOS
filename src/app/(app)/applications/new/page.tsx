@@ -10,7 +10,6 @@ const STATUSES = [
   { value: "interview", label: "Interview" },
   { value: "offer", label: "Offer" },
   { value: "rejected", label: "Rejected" },
-  { value: "ghosted", label: "Ghosted" },
 ]
 
 const SOURCES = [
