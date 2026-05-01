@@ -4,7 +4,8 @@ import { useState } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
-import { Briefcase, Plus } from "lucide-react"
+import { Briefcase } from "lucide-react"
+
 import { StatusBadge } from "@/components/ui/badge"
 import type { ApplicationListItem } from "@/types/database"
 
@@ -51,13 +52,6 @@ export function ApplicationsView({
             List
           </button>
         </div>
-        <Link
-          href="/applications/new"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-fg text-sm font-medium hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-3.5 h-3.5" />
-          New
-        </Link>
       </div>
 
       {view === "kanban" ? (
