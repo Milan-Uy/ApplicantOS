@@ -96,6 +96,13 @@ export function KanbanBoard({
                     snapshot.isDraggingOver ? "bg-white/[0.03]" : ""
                   }`}
                 >
+                  {grouped[status].length === 0 && (
+                    <div className={`rounded-md border border-dashed min-h-[80px] flex items-center justify-center transition-colors ${
+                      snapshot.isDraggingOver ? "border-primary/40" : "border-border/30"
+                    }`}>
+                      <span className="text-xs text-muted-fg/40 select-none">Drop here</span>
+                    </div>
+                  )}
                   {grouped[status].map((app, index) => (
                     <Draggable
                       key={app.id}

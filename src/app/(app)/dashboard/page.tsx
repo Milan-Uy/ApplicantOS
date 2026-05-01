@@ -95,11 +95,19 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-24 lg:pb-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-sm text-muted-fg mt-0.5">
-          Your job search at a glance
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+          <p className="text-sm text-muted-fg mt-0.5">
+            Your job search at a glance
+          </p>
+        </div>
+        <Link
+          href="/applications"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors self-start sm:self-auto shrink-0"
+        >
+          View board →
+        </Link>
       </div>
 
       {/* Stats grid */}

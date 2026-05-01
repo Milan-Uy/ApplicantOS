@@ -19,8 +19,6 @@ const badgeVariants = cva(
           "bg-white/[0.05] border border-white/[0.08] text-[12px] text-[#10b981]",
         rejected:
           "bg-white/[0.05] border border-white/[0.08] text-[12px] text-red-400",
-        ghosted:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-muted-fg",
         outline: "border border-border text-foreground",
       },
     },
@@ -39,7 +37,6 @@ const STATUS_LABELS: Record<string, string> = {
   interview: "Interview",
   offer: "Offer",
   rejected: "Rejected",
-  ghosted: "Ghosted",
 }
 
 interface BadgeProps

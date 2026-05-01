@@ -4,7 +4,7 @@ import { useState } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
 import { cn } from "@/lib/utils"
-import { Briefcase } from "lucide-react"
+import { Briefcase, Plus } from "lucide-react"
 import { StatusBadge } from "@/components/ui/badge"
 import type { ApplicationListItem } from "@/types/database"
 
@@ -25,30 +25,39 @@ export function ApplicationsView({
 
   return (
     <>
-      {/* View toggle */}
-      <div className="flex items-center gap-2">
-        <button
-          onClick={() => setView("kanban")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-            view === "kanban"
-              ? "bg-white/[0.08] text-foreground"
-              : "text-muted-fg hover:text-foreground hover:bg-muted"
-          )}
+      {/* View toggle + actions */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setView("kanban")}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+              view === "kanban"
+                ? "bg-white/[0.08] text-foreground"
+                : "text-muted-fg hover:text-foreground hover:bg-muted"
+            )}
+          >
+            Kanban
+          </button>
+          <button
+            onClick={() => setView("list")}
+            className={cn(
+              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
+              view === "list"
+                ? "bg-white/[0.08] text-foreground"
+                : "text-muted-fg hover:text-foreground hover:bg-muted"
+            )}
+          >
+            List
+          </button>
+        </div>
+        <Link
+          href="/applications/new"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-fg text-sm font-medium hover:bg-primary/90 transition-colors"
         >
-          Kanban
-        </button>
-        <button
-          onClick={() => setView("list")}
-          className={cn(
-            "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-            view === "list"
-              ? "bg-white/[0.08] text-foreground"
-              : "text-muted-fg hover:text-foreground hover:bg-muted"
-          )}
-        >
-          List
-        </button>
+          <Plus className="w-3.5 h-3.5" />
+          New
+        </Link>
       </div>
 
       {view === "kanban" ? (
