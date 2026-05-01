@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/ui/badge"
 import { DeleteApplicationButton } from "@/components/applications/DeleteApplicationButton"
@@ -24,6 +25,13 @@ export default async function ApplicationDetailPage({
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-6">
+      <Link
+        href="/applications"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-fg hover:text-foreground transition-colors -ml-0.5"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        Applications
+      </Link>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>

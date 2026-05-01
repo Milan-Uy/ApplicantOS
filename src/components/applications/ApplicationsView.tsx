@@ -21,7 +21,7 @@ export function ApplicationsView({
 }: {
   applications: ApplicationListItem[]
 }) {
-  const [view, setView] = useState<"kanban" | "list">("list")
+  const [view, setView] = useState<"kanban" | "list">("kanban")
 
   return (
     <>
