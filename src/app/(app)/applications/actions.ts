@@ -5,6 +5,25 @@ import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import type { ApplicationStatus } from "@/types/database"
 
+// Pre-interview funnel stages — auto-promoted to "interview" when an
+// interview_date is set. Later stages (interview/offer/rejected/ghosted)
+// are left alone, since follow-up rounds are valid in those states.
+const PRE_INTERVIEW_STATUSES: readonly ApplicationStatus[] = [
+  "wishlist",
+  "applied",
+  "phone_screen",
+]
+
+function resolveStatus(
+  submitted: ApplicationStatus,
+  interviewDate: string | null
+): ApplicationStatus {
+  if (interviewDate && PRE_INTERVIEW_STATUSES.includes(submitted)) {
+    return "interview"
+  }
+  return submitted
+}
+
 export async function createApplication(formData: FormData) {
   const supabase = await createClient()
   const {
@@ -12,12 +31,15 @@ export async function createApplication(formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
 
+  const newInterviewDate = (formData.get("interview_date") as string) || null
+  const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
+
   const { error } = await supabase.from("applications").insert({
     user_id: user.id,
     company: formData.get("company") as string,
     role: formData.get("role") as string,
     url: (formData.get("url") as string) || null,
-    status: (formData.get("status") as ApplicationStatus) || "wishlist",
+    status: resolveStatus(submittedStatus, newInterviewDate),
     source: (formData.get("source") as string) || null,
     salary_min: formData.get("salary_min")
       ? Number(formData.get("salary_min"))
@@ -33,7 +55,7 @@ export async function createApplication(formData: FormData) {
     contact_name: (formData.get("contact_name") as string) || null,
     contact_email: (formData.get("contact_email") as string) || null,
     resume_id: (formData.get("resume_id") as string) || null,
-    interview_date: (formData.get("interview_date") as string) || null,
+    interview_date: newInterviewDate,
     applied_at: (formData.get("applied_at") as string) || null,
     follow_up_at: (formData.get("follow_up_at") as string) || null,
   })
@@ -52,6 +74,7 @@ export async function updateApplication(id: string, formData: FormData) {
   if (!user) throw new Error("Unauthorized")
 
   const newInterviewDate = (formData.get("interview_date") as string) || null
+  const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
 
   const { data: existing } = await supabase
     .from("applications")
@@ -69,7 +92,7 @@ export async function updateApplication(id: string, formData: FormData) {
       company: formData.get("company") as string,
       role: formData.get("role") as string,
       url: (formData.get("url") as string) || null,
-      status: (formData.get("status") as ApplicationStatus) || "wishlist",
+      status: resolveStatus(submittedStatus, newInterviewDate),
       source: (formData.get("source") as string) || null,
       salary_min: formData.get("salary_min")
         ? Number(formData.get("salary_min"))
