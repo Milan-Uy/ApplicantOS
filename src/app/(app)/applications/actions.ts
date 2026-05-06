@@ -51,6 +51,18 @@ export async function updateApplication(id: string, formData: FormData) {
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
 
+  const newInterviewDate = (formData.get("interview_date") as string) || null
+
+  const { data: existing } = await supabase
+    .from("applications")
+    .select("interview_date")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .single()
+
+  // Reset reminder_sent so the day-before cron picks up the new date.
+  const interviewDateChanged = existing?.interview_date !== newInterviewDate
+
   const { error } = await supabase
     .from("applications")
     .update({
@@ -73,10 +85,11 @@ export async function updateApplication(id: string, formData: FormData) {
       contact_name: (formData.get("contact_name") as string) || null,
       contact_email: (formData.get("contact_email") as string) || null,
       resume_id: (formData.get("resume_id") as string) || null,
-      interview_date: (formData.get("interview_date") as string) || null,
+      interview_date: newInterviewDate,
       applied_at: (formData.get("applied_at") as string) || null,
       follow_up_at: (formData.get("follow_up_at") as string) || null,
       updated_at: new Date().toISOString(),
+      ...(interviewDateChanged ? { reminder_sent: false } : {}),
     })
     .eq("id", id)
     .eq("user_id", user.id)
