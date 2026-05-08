@@ -29,6 +29,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Missing required fields: user_id, role, url" }, { status: 400 })
   }
 
+  // Verify user_id is a real, active user
+  const { data: { user: targetUser } } = await supabaseAdmin.auth.admin.getUserById(user_id)
+  if (!targetUser) {
+    return NextResponse.json({ error: "Unknown user" }, { status: 400 })
+  }
+
   // Deduplicate by URL per user
   const { data: existing } = await supabaseAdmin
     .from("applications")
