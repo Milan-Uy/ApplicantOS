@@ -85,8 +85,10 @@ export async function GET(request: NextRequest) {
   )
 
   const sent = results.filter((r) => r.status === "fulfilled").length
-  const failed = results.filter((r) => r.status === "rejected").length
+  const failed = results.filter((r) => r.status === "rejected")
 
-  console.log(`Interview reminders: ${sent} sent, ${failed} failed`)
-  return NextResponse.json({ sent, failed })
+  failed.forEach((r) => console.error("Reminder failed:", r.reason))
+
+  console.log(`Interview reminders: ${sent} sent, ${failed.length} failed`)
+  return NextResponse.json({ sent, failed: failed.length })
 }
