@@ -488,7 +488,7 @@ function NoKeywordsBanner() {
           Add at least one keyword to start discovering jobs
         </div>
         <div style={{ fontSize: 12, color: "#8a8f98", marginTop: 3, lineHeight: 1.5 }}>
-          We'll search OnlineJobs.ph daily and queue any matches as{" "}
+          We&apos;ll search OnlineJobs.ph daily and queue any matches as{" "}
           <span style={{ color: "#f7f8f8" }}>Wishlist</span> applications. Try something specific —{" "}
           <kbd
             style={{
