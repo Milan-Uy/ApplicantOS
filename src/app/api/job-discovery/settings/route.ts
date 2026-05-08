@@ -21,11 +21,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Missing user_id" }, { status: 400 })
   }
 
-  const { data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("job_discovery_settings")
     .select("enabled, keywords")
     .eq("user_id", userId)
     .single()
+
+  if (error && error.code !== "PGRST116") {
+    console.error("Settings query error:", error)
+    return NextResponse.json({ error: "Query failed" }, { status: 500 })
+  }
 
   if (!data) {
     return NextResponse.json({ enabled: false, keywords: [] })
