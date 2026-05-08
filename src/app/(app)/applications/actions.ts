@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server"
 import type { ApplicationStatus } from "@/types/database"
 
 // Pre-interview funnel stages — auto-promoted to "interview" when an
-// interview_date is set. Later stages (interview/offer/rejected/ghosted)
+// interview_date is set. Later stages (interview/offer/rejected)
 // are left alone, since follow-up rounds are valid in those states.
 const PRE_INTERVIEW_STATUSES: readonly ApplicationStatus[] = [
   "wishlist",

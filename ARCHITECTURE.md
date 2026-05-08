@@ -8,7 +8,7 @@ A thorough, optimized map of the ApplicantOS codebase: what it is, what it's bui
 
 ## 1. What the App Is
 
-**ApplicantOS** is an AI-powered job application tracker. A user uploads resumes, tracks applications through a Kanban-style pipeline (wishlist → applied → phone screen → interview → offer / rejected / ghosted), and uses Gemini-powered features to optimize their resume against a job description and generate tailored cover letters. Interview reminders are delivered by email via a cron-driven Resend job.
+**ApplicantOS** is an AI-powered job application tracker. A user uploads resumes, tracks applications through a Kanban-style pipeline (wishlist → applied → phone screen → interview → offer / rejected), and uses Gemini-powered features to optimize their resume against a job description and generate tailored cover letters. Interview reminders are delivered by email via a cron-driven Resend job.
 
 Single-tenant per user — every resource is scoped to a Supabase auth user via both RLS and explicit `.eq("user_id", user.id)` guards.
 
@@ -65,8 +65,8 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 
 ### Authenticated app (`src/app/(app)/`)
 - **`/dashboard`** — [page.tsx](src/app/(app)/dashboard/page.tsx) — stats cards, upcoming interviews (next 5), source breakdown, recent apps. Single query, in-memory aggregation.
-- **`/applications`** — [page.tsx](src/app/(app)/applications/page.tsx) — hosts `<ApplicationsView>`, which toggles between Kanban and List.
-- **`/applications/new`** — [page.tsx](src/app/(app)/applications/new/page.tsx) — create form; pre-populates resume dropdown from user's documents.
+- **`/applications`** — [page.tsx](src/app/(app)/applications/page.tsx) — hosts `<ApplicationsView>`, which toggles between Kanban (default) and List.
+- **`/applications/new`** — [page.tsx](src/app/(app)/applications/new/page.tsx) — create form; `company` is optional; pre-populates resume dropdown from user's documents.
 - **`/applications/[id]`** — [page.tsx](src/app/(app)/applications/[id]/page.tsx) — detail view; action buttons to Edit, Optimize Resume, Cover Letter.
 - **`/applications/[id]/edit`** — [page.tsx](src/app/(app)/applications/[id]/edit/page.tsx) — edit form with pre-filled values, date input normalization.
 - **`/applications/[id]/resume`** — [page.tsx](src/app/(app)/applications/[id]/resume/page.tsx) + [client.tsx](src/app/(app)/applications/[id]/resume/client.tsx) — AI resume optimization UI.
@@ -80,6 +80,7 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **`POST /api/ai/resume-optimize`** — [route.ts](src/app/api/ai/resume-optimize/route.ts) — auth + app-ownership + 50 KB cap → `optimizeResume()` → stores result in `ai_results`.
 - **`POST /api/ai/cover-letter`** — [route.ts](src/app/api/ai/cover-letter/route.ts) — same pattern → `generateCoverLetter()`.
 - **`POST /api/pdf/cover-letter`** — [route.tsx](src/app/api/pdf/cover-letter/route.tsx) — `@react-pdf/renderer` → S3 upload → creates a `documents` row → presigned GET (1h) for download.
+- **`GET /api/view-resume`** — [route.ts](src/app/api/view-resume/route.ts) — returns a 5-min presigned GET URL for a document; auth + `.eq("user_id", user.id)` ownership guard. Used by ResumeCard PDF modal.
 - **`GET /api/cron/interview-reminder`** — [route.ts](src/app/api/cron/interview-reminder/route.ts) — cron endpoint protected by `CRON_SECRET` using `crypto.timingSafeEqual`.
 
 ### Middleware
@@ -96,16 +97,14 @@ Defined in [src/types/database.ts](src/types/database.ts). All tables have RLS `
 
 | Table | Purpose | Key columns |
 |---|---|---|
-| **applications** | Core tracking record | `id`, `user_id`, `company`, `role`, `url`, `status`, `source`, `salary_min/max`, `location`, `job_description`, `notes`, `contact_name/email`, `resume_id`, `interview_date`, `applied_at`, `follow_up_at`, `reminder_sent`, `created_at`, `updated_at` |
+| **applications** | Core tracking record | `id`, `user_id`, `company` (optional), `role`, `url`, `status`, `source`, `salary_min/max`, `salary_currency`, `salary_period`, `location`, `job_description`, `notes`, `contact_name/email`, `resume_id`, `interview_date`, `applied_at`, `follow_up_at`, `reminder_sent`, `created_at`, `updated_at` |
 | **documents** | Resume + cover-letter files | `id`, `user_id`, `application_id?`, `type` (`resume`\|`cover_letter`), `label?`, `filename`, `s3_key`, `extracted_text?` |
 | **ai_results** | Cached AI outputs (JSONB) | `id`, `application_id`, `type` (`resume_optimize`\|`cover_letter`), `result`, `created_at` |
 | **notifications** | In-app reminders (Phase 3) | `id`, `user_id`, `application_id?`, `type` (`follow_up`\|`digest`\|`system`), `title`, `body?`, `read` |
 
 ### Enums
-- **ApplicationStatus**: `wishlist` \| `applied` \| `phone_screen` \| `interview` \| `offer` \| `rejected` \| `ghosted`
-- **ApplicationSource**: `linkedin` \| `indeed` \| `referral` \| `company_site` \| `other`
-
-Note: `ghosted` is a valid status but is **not rendered as a Kanban column** — only in list/detail views.
+- **ApplicationStatus**: `wishlist` \| `applied` \| `phone_screen` \| `interview` \| `offer` \| `rejected`
+- **ApplicationSource**: `linkedin` \| `indeed` \| `referral` \| `company_site` \| `online_jobs_ph` \| `other`
 
 ---
 
@@ -146,7 +145,7 @@ drag event ───────────┘           │
                  RSC refetch rehydrates initialApps
 ```
 
-- Six drop columns (wishlist through rejected); ghosted omitted.
+- Six drop columns (wishlist through rejected).
 - `useOptimistic` updates the card's column instantly; `useTransition` runs the server action in the background. On server error, React's compensating update reverts the optimistic state. On success, server revalidation reconciles.
 - Board is loaded via `next/dynamic` with `ssr: false` — avoids the cost of the DnD library on the server and keeps initial payload lean.
 
@@ -302,7 +301,8 @@ Summarized from patterns observed across routes:
 - **Scheme** — dark-theme only (`color-scheme: dark`).
 
 ### Key components
-- **Badge** — [src/components/ui/badge.tsx](src/components/ui/badge.tsx) — CVA variants per `ApplicationStatus` (indigo applied, amber phone screen, orange interview, green offer, red rejected, muted wishlist/ghosted).
+- **Badge** — [src/components/ui/badge.tsx](src/components/ui/badge.tsx) — CVA variants per `ApplicationStatus` (indigo applied, amber phone screen, orange interview, green offer, red rejected, muted wishlist).
+- **ResumeCard** — [src/components/resumes/ResumeCard.tsx](src/components/resumes/ResumeCard.tsx) — "View PDF" button fetches a presigned URL from `GET /api/view-resume` and renders the PDF in a full-screen modal with an `<iframe>`; Escape key closes it.
 - **Skeleton** — [src/components/ui/skeleton.tsx](src/components/ui/skeleton.tsx) — shimmer gradient used across all `loading.tsx` files (dashboard/applications/resumes/settings) on the current `feat/loading-skeletons` branch.
 
 ### Navigation
@@ -364,4 +364,4 @@ Since this document is a map rather than a change, verification = make sure the 
 
 **Feature components**: [KanbanBoard.tsx](src/components/applications/KanbanBoard.tsx) · [ApplicationsView.tsx](src/components/applications/ApplicationsView.tsx) · [ResumeUpload.tsx](src/components/resumes/ResumeUpload.tsx) · [ResumeCard.tsx](src/components/resumes/ResumeCard.tsx)
 
-**API routes**: [upload](src/app/api/upload/route.ts) · [parse-resume](src/app/api/parse-resume/route.ts) · [ai/resume-optimize](src/app/api/ai/resume-optimize/route.ts) · [ai/cover-letter](src/app/api/ai/cover-letter/route.ts) · [pdf/cover-letter](src/app/api/pdf/cover-letter/route.tsx) · [cron/interview-reminder](src/app/api/cron/interview-reminder/route.ts)
+**API routes**: [upload](src/app/api/upload/route.ts) · [parse-resume](src/app/api/parse-resume/route.ts) · [view-resume](src/app/api/view-resume/route.ts) · [ai/resume-optimize](src/app/api/ai/resume-optimize/route.ts) · [ai/cover-letter](src/app/api/ai/cover-letter/route.ts) · [pdf/cover-letter](src/app/api/pdf/cover-letter/route.tsx) · [cron/interview-reminder](src/app/api/cron/interview-reminder/route.ts)

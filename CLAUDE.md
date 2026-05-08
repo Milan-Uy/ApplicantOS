@@ -84,11 +84,12 @@ src/
 │       │   ├── resume-optimize/route.ts
 │       │   └── cover-letter/route.ts
 │       ├── upload/route.ts             # Presigned S3 URL generation
-│       └── parse-resume/route.ts       # Extract text from uploaded resume
+│       ├── parse-resume/route.ts       # Extract text from uploaded resume
+│       └── view-resume/route.ts        # Presigned S3 URL for in-app PDF viewer
 ├── components/
 │   ├── ui/                             # shadcn/ui primitives
 │   ├── applications/                   # KanbanBoard, ApplicationsView, DeleteApplicationButton
-│   ├── resumes/                        # ResumeCard, ResumeUpload
+│   ├── resumes/                        # ResumeCard (PDF modal + text preview), ResumeUpload
 │   └── navigation/                     # Sidebar, MobileNav
 ├── lib/
 │   ├── supabase/
@@ -116,11 +117,12 @@ src/
 - **Server actions:** Mutations use `revalidatePath` + `redirect` pattern.
 - **Resume upload:** Client → `POST /api/upload` (get presigned URL) → upload direct to S3 → `POST /api/parse-resume` (extract text) → editable preview → save to DB.
 - **AI:** Vercel AI SDK with Gemini 2.5 Flash. `generateObject()` with Zod schemas for resume optimizer (parallel via `Promise.all`), `generateText()` for cover letter. All `generateText` calls use `maxRetries: 3` for exponential backoff on 429/5xx.
-- **Kanban:** `@hello-pangea/dnd` for drag-and-drop between status columns. Uses React 19 `useOptimistic` — `initialApps` prop auto-syncs, revert is automatic on server error.
+- **Kanban:** `@hello-pangea/dnd` for drag-and-drop between status columns. Uses React 19 `useOptimistic` — `initialApps` prop auto-syncs, revert is automatic on server error. Kanban is the default view; list view is a toggle.
+- **Source display:** `source.replaceAll("_", " ")` — all underscores replaced when rendering source strings.
 
 ## Database Tables
 
-- `applications` — core job application data (status enum: `wishlist`, `applied`, `phone_screen`, `interview`, `offer`, `rejected`, `ghosted`)
+- `applications` — core job application data (status enum: `wishlist`, `applied`, `phone_screen`, `interview`, `offer`, `rejected`; source enum includes `online_jobs_ph`; includes `salary_currency` + `salary_period`; `company` is optional)
 - `documents` — resume + cover letter files (S3 key + extracted text)
 - `ai_results` — stored AI optimization/generation results (JSONB)
 - `notifications` — in-app notifications from n8n webhooks (Phase 3)
