@@ -39,7 +39,9 @@ export async function updateSession(request: NextRequest) {
   const publicPaths = ["/", "/login", "/signup", "/auth/callback"]
   const isPublicPath =
     publicPaths.some((p) => pathname === p || pathname.startsWith("/auth/")) ||
-    pathname.startsWith("/api/cron/")
+    pathname.startsWith("/api/cron/") ||
+    pathname.startsWith("/api/webhooks/") ||
+    pathname.startsWith("/api/job-discovery/")
 
   // If not authenticated and trying to access protected route
   if (!user && !isPublicPath) {
