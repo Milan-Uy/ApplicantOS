@@ -71,11 +71,7 @@ export default async function DashboardPage() {
 
   for (const a of apps) {
     if (a.status !== "wishlist") applied++
-    if (
-      a.status !== "wishlist" &&
-      a.status !== "applied" &&
-      a.status !== "ghosted"
-    ) {
+    if (a.status !== "wishlist" && a.status !== "applied") {
       responded++
     }
     if (a.status === "interview" || a.status === "phone_screen") interviews++

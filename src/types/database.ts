@@ -5,7 +5,6 @@ export type ApplicationStatus =
   | "interview"
   | "offer"
   | "rejected"
-  | "ghosted"
 
 export type ApplicationSource =
   | "linkedin"
