@@ -5,9 +5,7 @@ import Link from "next/link"
 import {
   Clock,
   Check,
-  Loader,
   Sparkles,
-  RefreshCw,
   Search,
   AlertTriangle,
   Info,
@@ -786,8 +784,6 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
   const [enabled, setEnabled] = useState(settings.enabled)
   const [keywords, setKeywords] = useState<string[]>(settings.keywords ?? [])
   const [discovered, setDiscovered] = useState<DiscoveredApp[]>(initialDiscovered)
-  const [running, setRunning] = useState(false)
-
   const handleToggle = async (v: boolean) => {
     const prev = enabled
     setEnabled(v)
@@ -817,15 +813,6 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
       setDiscovered(prev)
     }
   }
-
-  const runNow = () => {
-    setRunning(true)
-    setTimeout(() => setRunning(false), 1600)
-  }
-
-  const status = running
-    ? { color: "#a5acf0", Icon: Loader, label: "Running now…", spin: true }
-    : { color: "#10b981", Icon: Check, label: "Success", spin: false }
 
   return (
     <div style={{ padding: 32, maxWidth: 1100, margin: "0 auto" }}>
@@ -880,32 +867,6 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <button
-            onClick={runNow}
-            style={{
-              height: 40,
-              padding: "0 16px",
-              borderRadius: 8,
-              background: "#0f1011",
-              border: "1px solid rgba(255,255,255,.08)",
-              color: "#f7f8f8",
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: "pointer",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              fontFamily: "inherit",
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#16181a")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#0f1011")}
-          >
-            <RefreshCw
-              size={14}
-              style={{ animation: running ? "spin 1s linear infinite" : "none" }}
-            />
-            {running ? "Checking…" : "Run check now"}
-          </button>
           <div
             style={{
               display: "inline-flex",
@@ -938,15 +899,15 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
           sub={enabled ? "Next run in ~22h · 8:00 AM daily" : "Discovery is paused"}
         />
         <StatCard
-          icon={status.Icon}
+          icon={Check}
           label="Run Status"
           value={
             <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-              <PulseDot color={status.color} />
-              <span style={{ color: status.color }}>{status.label}</span>
+              <PulseDot color="#10b981" />
+              <span style={{ color: "#10b981" }}>Ready</span>
             </span>
           }
-          sub={running ? "Scraping listings…" : "Ready"}
+          sub="Runs daily at 8:00 AM"
         />
         <StatCard
           icon={Sparkles}
