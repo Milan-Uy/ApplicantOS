@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Briefcase,
   FileText,
+  Search,
   Settings,
   Cpu,
   Menu,
@@ -18,6 +19,7 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/applications", label: "Applications", icon: Briefcase },
   { href: "/resumes", label: "Resumes", icon: FileText },
+  { href: "/job-discovery", label: "Job Discovery", icon: Search },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 
