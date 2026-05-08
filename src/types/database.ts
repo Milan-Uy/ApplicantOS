@@ -42,6 +42,7 @@ export interface Application {
   applied_at: string | null
   follow_up_at: string | null
   reminder_sent: boolean
+  auto_discovered: boolean
   created_at: string
   updated_at: string
 }
@@ -119,4 +120,15 @@ export interface Notification {
   body: string | null
   read: boolean
   created_at: string
+}
+
+export interface JobDiscoverySettings {
+  id: string
+  user_id: string
+  enabled: boolean
+  keywords: string[]
+  last_run_at: string | null
+  last_run_status: string | null
+  created_at: string
+  updated_at: string
 }
