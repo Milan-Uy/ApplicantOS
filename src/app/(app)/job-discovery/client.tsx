@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useTransition } from "react"
+import { useState, useRef } from "react"
 import Link from "next/link"
 import {
   Clock,
@@ -159,8 +159,9 @@ function KeywordsEditor({
   const inputRef = useRef<HTMLInputElement>(null)
 
   const commit = () => {
-    const v = draft.trim()
+    const v = draft.trim().replace(/,+/g, "").trim()
     if (!v) return
+    if (keywords.length >= 20) return
     if (keywords.map((k) => k.toLowerCase()).includes(v.toLowerCase())) {
       setDraft("")
       return
@@ -786,21 +787,35 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
   const [keywords, setKeywords] = useState<string[]>(settings.keywords ?? [])
   const [discovered, setDiscovered] = useState<DiscoveredApp[]>(initialDiscovered)
   const [running, setRunning] = useState(false)
-  const [, startTransition] = useTransition()
 
-  const handleToggle = (v: boolean) => {
+  const handleToggle = async (v: boolean) => {
+    const prev = enabled
     setEnabled(v)
-    startTransition(() => { toggleEnabled(v) })
+    try {
+      await toggleEnabled(v)
+    } catch {
+      setEnabled(prev)
+    }
   }
 
-  const handleKeywords = (kw: string[]) => {
+  const handleKeywords = async (kw: string[]) => {
+    const prev = keywords
     setKeywords(kw)
-    startTransition(() => { saveKeywords(kw) })
+    try {
+      await saveKeywords(kw)
+    } catch {
+      setKeywords(prev)
+    }
   }
 
-  const handleDismiss = (id: string) => {
+  const handleDismiss = async (id: string) => {
+    const prev = discovered
     setDiscovered((d) => d.filter((x) => x.id !== id))
-    startTransition(() => { dismissJob(id) })
+    try {
+      await dismissJob(id)
+    } catch {
+      setDiscovered(prev)
+    }
   }
 
   const runNow = () => {
