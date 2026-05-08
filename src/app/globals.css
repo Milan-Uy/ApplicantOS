@@ -122,6 +122,7 @@
   --animate-shimmer: shimmer 1.5s infinite linear;
   --animate-fade-in: fade-in 200ms ease-out;
   --animate-blink: blink 1s steps(2) infinite;
+  --animate-pulse-fade: pulse-fade 2s ease-out infinite;
 
   @keyframes shimmer {
     0% { background-position: -200% 0; }
@@ -135,6 +136,12 @@
 
   @keyframes blink {
     50% { opacity: 0; }
+  }
+
+  @keyframes pulse-fade {
+    0%   { transform: scale(1);   opacity: 0.55; }
+    70%  { transform: scale(2.4); opacity: 0; }
+    100% { transform: scale(2.4); opacity: 0; }
   }
 }
 
