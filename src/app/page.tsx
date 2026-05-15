@@ -2,10 +2,8 @@ import Link from "next/link"
 import {
   Cpu,
   ArrowRight,
-  Play,
+  ChevronDown,
   Kanban,
-  Sparkles,
-  Mail,
   FileText,
   Bell,
   Lock,
@@ -16,6 +14,9 @@ import {
   LayoutDashboard,
   Briefcase,
   Settings,
+  Search,
+  Phone,
+  Sparkles,
 } from "lucide-react"
 
 export default function LandingPage() {
@@ -99,7 +100,7 @@ export default function LandingPage() {
             <span className="bg-primary text-white text-[10px] font-semibold px-2 py-0.5 rounded-full uppercase tracking-wide">
               New
             </span>
-            AI Resume Optimizer powered by Gemini 2.5
+            Job Discovery &mdash; auto-find roles on OnlineJobs.ph
             <ArrowRight className="w-3 h-3" />
           </div>
 
@@ -125,8 +126,8 @@ export default function LandingPage() {
             className="mt-6 mx-auto max-w-[580px] text-muted-fg text-balance"
             style={{ fontSize: "17px", lineHeight: 1.5 }}
           >
-            Track every application, optimize your resume with AI, and generate
-            tailored cover letters &mdash; all in one place.
+            Auto-discover roles, track every application across the pipeline,
+            and never miss an interview &mdash; all in one quiet workspace.
           </p>
 
           <div className="mt-9 flex gap-2.5 justify-center items-center flex-wrap">
@@ -135,16 +136,16 @@ export default function LandingPage() {
               className="h-11 px-5 rounded-lg bg-primary text-white text-sm font-semibold flex items-center gap-2 transition-colors duration-150 hover:bg-[#6c77d6]"
               style={{ boxShadow: "var(--shadow-glow-primary)" }}
             >
-              Get started — it&apos;s free
+              Get started &mdash; it&apos;s free
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
-            <Link
-              href="/login"
+            <a
+              href="#features"
               className="h-11 px-5 rounded-lg bg-[#0f1011] text-foreground text-sm font-medium border border-border flex items-center gap-2 transition-colors duration-150 hover:bg-[#16181a] hover:border-[rgba(255,255,255,0.12)]"
             >
-              <Play className="w-3.5 h-3.5" />
-              Watch demo
-            </Link>
+              Browse features
+              <ChevronDown className="w-3.5 h-3.5" />
+            </a>
           </div>
         </section>
 
@@ -196,6 +197,7 @@ export default function LandingPage() {
                   { icon: LayoutDashboard, label: "Dashboard" },
                   { icon: Briefcase, label: "Applications", active: true },
                   { icon: FileText, label: "Resumes" },
+                  { icon: Search, label: "Job Discovery" },
                   { icon: Settings, label: "Settings" },
                 ].map(({ icon: Icon, label, active }) => (
                   <div
@@ -342,28 +344,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Logos row */}
-        <div className="mt-20 mx-auto max-w-[900px] px-8 text-center">
-          <p className="text-[11px] uppercase tracking-[.08em] text-muted-fg mb-6">
-            Job seekers tracking applications to
-          </p>
-          <div
-            className="flex justify-center gap-14 flex-wrap"
-            style={{ opacity: 0.65 }}
-          >
-            {["Stripe", "Linear", "Vercel", "Figma", "Anthropic", "Notion"].map(
-              (name) => (
-                <span
-                  key={name}
-                  className="text-[18px] font-semibold tracking-tight text-muted-fg"
-                >
-                  {name}
-                </span>
-              )
-            )}
-          </div>
-        </div>
-
         {/* Bento features */}
         <section
           id="features"
@@ -383,8 +363,8 @@ export default function LandingPage() {
             style={{ fontSize: "16px", lineHeight: 1.55 }}
           >
             Stop juggling spreadsheets, doc folders, and four different tabs.
-            ApplicantOS keeps every application, resume, and AI-generated draft
-            in one place &mdash; quietly organized.
+            ApplicantOS finds roles, holds your resumes, and tracks every
+            conversation &mdash; quietly organized in one place.
           </p>
 
           <div
@@ -435,105 +415,80 @@ export default function LandingPage() {
               </div>
             </BentoTile>
 
-            {/* Tile 2 — AI Resume Optimizer */}
+            {/* Tile 2 — Job Discovery */}
             <BentoTile className="col-span-3">
               <TileIcon>
-                <Sparkles className="w-[18px] h-[18px] text-[#7170ff]" />
+                <Search className="w-[18px] h-[18px]" style={{ color: "#7170ff" }} />
               </TileIcon>
               <h3 className="text-[16px] font-semibold tracking-[-0.01em] mb-1.5">
-                AI Resume Optimizer
+                Auto-discover jobs on OnlineJobs.ph
               </h3>
               <p className="text-[13px] text-muted-fg leading-[1.5]">
-                Match score, missing keywords, AI-rewritten bullets &mdash;
-                tailored to each job description.
+                Set a few keywords. We check daily and queue any matches as
+                wishlist applications &mdash; you just review, dismiss, or move
+                them forward.
               </p>
-              <div className="mt-5 flex items-baseline gap-3">
-                <span
-                  className="font-medium tabular-nums leading-none"
-                  style={{ fontSize: "56px" }}
-                >
-                  87
-                </span>
-                <span className="text-[12px] font-semibold text-[#10b981] px-2 py-0.5 rounded-md bg-[rgba(16,185,129,0.1)]">
-                  +12
-                </span>
-                <span className="text-[11px] text-muted-fg uppercase tracking-[.08em] ml-auto">
-                  Match Score
-                </span>
-              </div>
-              <div className="mt-3.5 h-1.5 rounded-full bg-white/[0.05] overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: "87%",
-                    background: "linear-gradient(90deg, #5e6ad2, #7170ff)",
-                  }}
-                />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {[
-                  { label: "React", match: true },
-                  { label: "TypeScript", match: true },
-                  { label: "Design Systems", match: true },
-                  { label: "Storybook", match: false },
-                  { label: "A11y", match: false },
-                ].map((kw) => (
+              {/* Status row */}
+              <div className="mt-5 flex items-center gap-2">
+                <span className="relative w-2 h-2 flex-shrink-0">
                   <span
-                    key={kw.label}
-                    className="font-mono text-[11px] px-2.5 py-0.5 rounded-md border"
-                    style={
-                      kw.match
-                        ? {
-                            color: "#10b981",
-                            borderColor: "rgba(16,185,129,0.25)",
-                            background: "rgba(16,185,129,0.06)",
-                          }
-                        : {
-                            color: "#fb923c",
-                            borderColor: "rgba(251,146,60,0.25)",
-                            background: "rgba(251,146,60,0.06)",
-                          }
-                    }
-                  >
-                    {!kw.match && "+ "}
-                    {kw.label}
-                  </span>
-                ))}
+                    className="absolute inset-0 rounded-full bg-[#10b981]"
+                    style={{ animation: "pulse-fade 2s ease-out infinite" }}
+                  />
+                  <span className="absolute inset-0 rounded-full bg-[#10b981]" />
+                </span>
+                <span className="text-[11px] text-muted-fg">
+                  Last checked{" "}
+                  <span className="text-foreground font-medium">2h ago</span>
+                  {" "}&middot; 3 new matches
+                </span>
               </div>
-            </BentoTile>
-
-            {/* Tile 3 — Cover letters */}
-            <BentoTile className="col-span-3">
-              <TileIcon>
-                <Mail className="w-[18px] h-[18px]" />
-              </TileIcon>
-              <h3 className="text-[16px] font-semibold tracking-[-0.01em] mb-1.5">
-                Tailored cover letters
-              </h3>
-              <p className="text-[13px] text-muted-fg leading-[1.5]">
-                Generate role-specific cover letters from your resume and the
-                job post in seconds &mdash; never start from a blank page again.
-              </p>
+              {/* Keyword chips */}
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {["react developer", "bookkeeper", "virtual assistant"].map(
+                  (kw) => (
+                    <span
+                      key={kw}
+                      className="font-mono text-[11px] px-2.5 py-0.5 rounded-md"
+                      style={{
+                        color: "#a5acf0",
+                        background: "rgba(94,106,210,0.08)",
+                        border: "1px solid rgba(94,106,210,0.22)",
+                      }}
+                    >
+                      {kw}
+                    </span>
+                  )
+                )}
+              </div>
+              {/* Matched job card */}
               <div
-                className="mt-4 p-3.5 rounded-lg border border-border text-[11px] leading-[1.55] text-muted-fg"
+                className="mt-3 p-3 rounded-lg border border-border flex gap-2.5 items-start"
                 style={{ background: "#0a0b0c" }}
               >
-                <strong className="text-foreground font-semibold">
-                  Dear Linear team,
-                </strong>
-                <br />
-                I&apos;ve spent the last four years designing the interfaces a
-                small team uses every day &mdash; the kind of dense, opinionated
-                tooling Linear is known for. Working on developer experience at
-                Vercel taught me how to balance density with restraint
                 <span
-                  className="inline-block w-1.5 h-3 bg-primary align-text-bottom ml-0.5"
-                  style={{ animation: "blink 1s steps(2) infinite" }}
-                />
+                  className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-[.06em] px-1.5 py-0.5 rounded flex-shrink-0 mt-0.5"
+                  style={{
+                    color: "#a5acf0",
+                    background: "rgba(94,106,210,0.12)",
+                    border: "1px solid rgba(94,106,210,0.25)",
+                  }}
+                >
+                  <Sparkles className="w-[9px] h-[9px]" />
+                  Auto
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[12px] font-semibold leading-snug">
+                    Senior React Developer (Remote, PH)
+                  </div>
+                  <div className="text-[11px] text-muted-fg mt-0.5">
+                    Acme Software &middot; matched &ldquo;react developer&rdquo;
+                  </div>
+                </div>
               </div>
             </BentoTile>
 
-            {/* Tile 4 — Resume library */}
+            {/* Tile 3 — Resume library */}
             <BentoTile className="col-span-3">
               <TileIcon>
                 <FileText className="w-[18px] h-[18px]" />
@@ -572,43 +527,85 @@ export default function LandingPage() {
               </div>
             </BentoTile>
 
-            {/* Tile 5 — Interview reminders */}
-            <BentoTile className="col-span-3">
-              <TileIcon>
-                <Bell className="w-[18px] h-[18px]" />
-              </TileIcon>
-              <h3 className="text-[16px] font-semibold tracking-[-0.01em] mb-1.5">
-                Interview reminders, not anxiety
-              </h3>
-              <p className="text-[13px] text-muted-fg leading-[1.5]">
-                Quiet email nudges 24 hours before an interview, with the role,
-                the company, and a link straight back to your notes.
-              </p>
-              <div
-                className="mt-4 p-3 rounded-lg border border-border flex items-center gap-2.5"
-                style={{ background: "#0a0b0c" }}
-              >
-                <div
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                  style={{
-                    background: "rgba(251,146,60,0.1)",
-                    color: "#fb923c",
-                  }}
-                >
-                  <CalendarClock className="w-4 h-4" />
+            {/* Tile 4 — Interview reminders (full width, two cards) */}
+            <BentoTile className="col-span-6">
+              <div className="flex justify-between items-start gap-8 flex-wrap">
+                <div className="max-w-[380px]">
+                  <TileIcon>
+                    <Bell className="w-[18px] h-[18px]" />
+                  </TileIcon>
+                  <h3 className="text-[16px] font-semibold tracking-[-0.01em] mb-1.5">
+                    Interview reminders, not anxiety
+                  </h3>
+                  <p className="text-[13px] text-muted-fg leading-[1.5]">
+                    Quiet email nudges 24 hours before an interview &mdash; the
+                    role, the company, and a link straight back to your notes.
+                  </p>
                 </div>
-                <div>
-                  <div className="text-[12px] font-medium">
-                    Linear &middot; Sr. Product Designer
+                <div className="flex-1 min-w-[280px] max-w-[440px] flex flex-col gap-2">
+                  {/* Card 1 — Interview */}
+                  <div
+                    className="p-3 rounded-lg border border-border flex items-center gap-2.5"
+                    style={{ background: "#0a0b0c" }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: "rgba(251,146,60,0.1)",
+                        color: "#fb923c",
+                      }}
+                    >
+                      <CalendarClock className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-medium">
+                        Linear &middot; Sr. Product Designer
+                      </div>
+                      <div className="text-[11px] text-muted-fg">
+                        Tomorrow at 10:00 AM &middot; 30 min &middot; Notes ready
+                      </div>
+                    </div>
+                    <span
+                      className="text-[10px] font-medium uppercase tracking-[.06em] flex-shrink-0"
+                      style={{ color: "#fb923c" }}
+                    >
+                      Interview
+                    </span>
                   </div>
-                  <div className="text-[11px] text-muted-fg">
-                    Tomorrow at 10:00 AM &middot; 30 min &middot; Notes ready
+                  {/* Card 2 — Phone Screen */}
+                  <div
+                    className="p-3 rounded-lg border border-border flex items-center gap-2.5"
+                    style={{ background: "#0a0b0c" }}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{
+                        background: "rgba(251,191,36,0.1)",
+                        color: "#fbbf24",
+                      }}
+                    >
+                      <Phone className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-[12px] font-medium">
+                        Anthropic &middot; Design Engineer
+                      </div>
+                      <div className="text-[11px] text-muted-fg">
+                        Thu at 2:30 PM &middot; 45 min &middot; Phone screen
+                      </div>
+                    </div>
+                    <span
+                      className="text-[10px] font-medium uppercase tracking-[.06em] flex-shrink-0"
+                      style={{ color: "#fbbf24" }}
+                    >
+                      Screen
+                    </span>
                   </div>
                 </div>
               </div>
             </BentoTile>
 
-            {/* Tile 6 — Privacy (full width) */}
+            {/* Tile 5 — Privacy (full width) */}
             <BentoTile className="col-span-6">
               <div className="flex justify-between items-start gap-8 flex-wrap">
                 <div className="max-w-[520px]">
@@ -668,25 +665,25 @@ export default function LandingPage() {
             className="font-medium tracking-tight leading-[1.1] max-w-[680px]"
             style={{ fontSize: "clamp(28px, 4vw, 44px)" }}
           >
-            From job post to &ldquo;I got the offer&rdquo; in three steps.
+            From keyword to offer in three quiet steps.
           </h2>
 
           <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                num: "01 / Add",
-                heading: "Paste the job link.",
-                body: "Drop the URL or fill in role, company, and salary. ApplicantOS pulls in the rest. Drag it across your board as the conversation moves.",
+                num: "01 / Discover",
+                heading: "Set your keywords.",
+                body: "Add the roles you want — react developer, bookkeeper, virtual assistant. We scan OnlineJobs.ph every morning and queue matches as wishlist applications.",
               },
               {
-                num: "02 / Optimize",
-                heading: "Let the AI tailor.",
-                body: "Pick a resume from your library. Get a match score, the keywords you're missing, and rewritten bullets — specific to that company.",
+                num: "02 / Track",
+                heading: "Drag across the board.",
+                body: "Move every role through wishlist → applied → phone screen → interview → offer. Notes, salary, and source stick to the card.",
               },
               {
-                num: "03 / Send",
-                heading: "Generate, review, ship.",
-                body: "A cover letter that doesn't sound like a cover letter, in seconds. Edit, export to PDF, send. The board updates itself.",
+                num: "03 / Show up",
+                heading: "Walk into the interview prepared.",
+                body: "Email nudges 24 hours before each interview — the role, the company, and a link back to your notes. The board updates itself.",
               },
             ].map((step) => (
               <div
@@ -757,12 +754,12 @@ export default function LandingPage() {
                 Create free account
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
-              <Link
-                href="/login"
+              <a
+                href="#features"
                 className="h-11 px-5 rounded-lg text-muted-fg text-sm font-medium flex items-center hover:text-foreground hover:bg-white/[0.05] transition-colors duration-150"
               >
-                View live demo
-              </Link>
+                See what&apos;s inside
+              </a>
             </div>
           </div>
         </section>
@@ -779,17 +776,18 @@ export default function LandingPage() {
               </span>
             </div>
             <div className="flex items-center gap-6">
-              {["Features", "Pricing", "Changelog", "Privacy", "Terms"].map(
-                (link) => (
-                  <a
-                    key={link}
-                    href="#"
-                    className="text-[13px] text-muted-fg hover:text-foreground transition-colors duration-150"
-                  >
-                    {link}
-                  </a>
-                )
-              )}
+              {[
+                { label: "Features", href: "#features" },
+                { label: "How it works", href: "#how" },
+              ].map(({ label, href }) => (
+                <a
+                  key={label}
+                  href={href}
+                  className="text-[13px] text-muted-fg hover:text-foreground transition-colors duration-150"
+                >
+                  {label}
+                </a>
+              ))}
             </div>
             <p className="text-[13px] text-muted-fg">&copy; 2026 ApplicantOS</p>
           </div>
