@@ -20,15 +20,15 @@ export default async function JobDiscoveryPage() {
 
   const settings = settingsRow as JobDiscoverySettings
 
-  const sevenDaysAgo = new Date()
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
   const { data: discoveries } = await supabase
     .from("applications")
     .select("id, role, company, url, created_at, status")
     .eq("user_id", user.id)
     .eq("auto_discovered", true)
-    .gte("created_at", sevenDaysAgo.toISOString())
+    .gte("created_at", thirtyDaysAgo.toISOString())
     .order("created_at", { ascending: false })
 
   return (

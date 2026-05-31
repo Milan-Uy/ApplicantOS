@@ -421,7 +421,7 @@ function SourceTile({ active, count }: { active: boolean; count: number }) {
           >
             {count}
           </div>
-          <div style={{ fontSize: 11, color: "#8a8f98" }}>this week</div>
+          <div style={{ fontSize: 11, color: "#8a8f98" }}>last 30 days</div>
         </div>
       </div>
     </div>
@@ -891,7 +891,7 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
       </div>
 
       {/* Stat cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 28 }}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" style={{ marginBottom: 28 }}>
         <StatCard
           icon={Clock}
           label="Last Checked"
@@ -914,14 +914,14 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
           label="Discovered"
           value={`${discovered.length}`}
           valueColor="#5e6ad2"
-          sub="in the last 7 days"
+          sub="in the last 30 days"
         />
       </div>
 
       {/* Sources */}
       <section style={{ marginBottom: 28 }}>
         <SectionHeader title="Sources" sub="Where we look for matching roles" />
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SourceTile active={enabled} count={discovered.length} />
           <SourcePlaceholder />
         </div>
@@ -987,7 +987,7 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
       <section>
         <SectionHeader
           title="Recently Discovered"
-          sub="Last 7 days · auto-discovered roles waiting in your wishlist"
+          sub="Last 30 days · auto-discovered roles waiting in your wishlist"
           action={
             <Link
               href="/applications"
@@ -1008,7 +1008,7 @@ export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
         {discovered.length === 0 ? (
           <EmptyDiscoveries />
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 12 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {discovered.map((app) => (
               <DiscoveredCard key={app.id} app={app} onDismiss={() => handleDismiss(app.id)} />
             ))}
