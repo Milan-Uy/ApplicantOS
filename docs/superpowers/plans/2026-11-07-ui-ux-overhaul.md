@@ -35,7 +35,7 @@
 
 Also pinned: interview-reminder cron skips the demo user (Task 8) — otherwise it emails `DEMO_EMAIL` daily. Unset `CRON_SECRET` must not open any cron route (Task 1 `verifyBearer`).
 
-**Live gate (not testable in code):** Supabase Auth → "Secure email change" must be enabled, so a visitor cannot move the demo account to an address they control. Check in the dashboard during Task 7 and record it in the PR.
+**Live gate (not testable in code):** a visitor must not be able to move the demo account to an address they control. Supabase only requires old-mailbox approval when email auto-confirm is off **and** "Secure email change" is on. During Task 7, in the Supabase dashboard: (1) Auth → "Confirm email" is enabled, (2) "Secure email change" is enabled, (3) live check — signed in as the e2e user, call `supabase.auth.updateUser({ email: "<a mailbox you control>" })` from the browser console, confirm only from the new mailbox, then `admin.getUserById` still shows the original email. Record all three in the PR.
 
 ---
 
@@ -70,8 +70,10 @@ test("seeds every status, resumes with files, AI results, discovered jobs", asyn
   const { data: apps } = await admin().from("applications").select("status, auto_discovered").eq("user_id", userId)
   expect(new Set(apps!.map(a => a.status))).toEqual(new Set(["wishlist","applied","phone_screen","interview","offer","rejected"]))
   expect(apps!.filter(a => a.auto_discovered).length).toBeGreaterThanOrEqual(3)
-  const { data: files } = await admin().storage.from("documents").list(`resumes/${userId}`)
-  expect(files!.length).toBeGreaterThanOrEqual(2)
+  const keys = await listAllKeys(admin(), `resumes/${userId}`)
+  expect(keys.filter(k => k.endsWith(".pdf")).length).toBe(SEED_RESUMES.length)
+  const { data: docs } = await admin().from("documents").select("s3_key").eq("user_id", userId)
+  for (const d of docs!) expect(keys).toContain(d.s3_key)    // every row points at a real file, no leftovers
 })
 test("is idempotent and leaves other users untouched", async () => {
   const before = await countRowsNotOwnedBy(e2eId)   // helper in the spec: count(applications) where user_id != e2e user
@@ -83,12 +85,18 @@ test("is idempotent and leaves other users untouched", async () => {
 test("a failed upload leaves the previous dataset intact", async () => {
   await resetForSpec()
   const before = await snapshot(e2eId)               // helper: sorted application ids + document s3_keys
-  await expect(resetDemoUser(admin(), E2E_EMAIL, { password: E2E_PASSWORD, failAfterUploads: 1 } as never)).rejects.toThrow()
+  await expect(resetDemoUser(admin(), E2E_EMAIL, { password: E2E_PASSWORD, failAt: "uploads" } as never)).rejects.toThrow()
+  expect(await snapshot(e2eId)).toEqual(before)
+})
+test("a failed insert leaves the previous dataset intact", async () => {
+  await resetForSpec()
+  const before = await snapshot(e2eId)
+  await expect(resetDemoUser(admin(), E2E_EMAIL, { password: E2E_PASSWORD, failAt: "inserts" } as never)).rejects.toThrow()
   expect(await snapshot(e2eId)).toEqual(before)
 })
 ```
 
-`failAfterUploads` is a test-only hook on `opts` (`shortcut: test seam in prod code, remove if reset gains real transactions`).
+`failAt: "uploads" | "inserts"` is a test-only hook on `opts` that throws right after the first upload / first insert (`shortcut: test seam in prod code, remove if reset gains real transactions`).
 
 `e2e/verify-bearer.spec.ts`: `verifyBearer(req("Bearer undefined"), undefined)` → `false`; `verifyBearer(req("Bearer "), "")` → `false`; `verifyBearer(req("Bearer s3cret"), "s3cret")` → `true`; `verifyBearer(req("Bearer s3creX"), "s3cret")` → `false`; no header → `false`.
 
@@ -102,9 +110,11 @@ test("a failed upload leaves the previous dataset intact", async () => {
     2. `createBucket(BUCKET, { public: false, fileSizeLimit: "10MB", allowedMimeTypes: [pdf, docx] })`, ignoring "already exists".
     3. List existing objects under `resumes/{id}/` and `cover_letters/{id}/` (remember them as `oldKeys`).
     4. Render every seed resume PDF and upload under a fresh prefix `resumes/{id}/seed-{runId}/…`; any upload error → remove what this run uploaded and throw.
-    5. Delete `documents`, `applications` (cascades `ai_results` — that table has no `user_id`), `job_discovery_settings`, each `.eq("user_id", id)`; then insert the seed rows pointing at the new keys.
-    6. Remove `oldKeys`. Return `{ userId }`.
-    `shortcut: two overlapping resets (cron + manual) can interleave steps 5–6; serialise with a lock row if that ever happens`.
+    5. Record the user's current row ids (`oldAppIds`, `oldDocIds`). **Insert** the seed rows (new ids) pointing at the new keys, and upsert `job_discovery_settings` (`onConflict: "user_id"`). An insert error → delete the rows this run inserted, remove this run's uploads, throw (old dataset untouched).
+    6. Delete old rows by id: `documents` `.in("id", oldDocIds)`, `applications` `.in("id", oldAppIds)` (cascades `ai_results` — that table has no `user_id`), each also `.eq("user_id", id)`. A failure here leaves old + new rows (duplicates, never empty); the next reset cleans them.
+    7. Remove `oldKeys`. Return `{ userId }`.
+    `shortcut: no transaction — a crash between 5 and 6 leaves duplicates until the next reset; serialise overlapping resets (cron + manual) with a lock row if that ever happens`.
+  - `listAllKeys(admin: SupabaseClient, prefix: string): Promise<string[]>` (exported from `reset.ts`) — recursive, paginated `storage.list` walk returning leaf object paths only (entries with `id === null` are folders: recurse). Used for `oldKeys` and in tests.
   - `admin()` in tests = `createClient(NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } })`.
 
 - [ ] **Step 5: Run — expect PASS.**
@@ -211,11 +221,11 @@ expect(isOwnedKey(`resumes/${uid}/../${other}/a.pdf`, uid, "resumes")).toBe(fals
 expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 ```
 
-- [ ] **Step 2: Failing e2e** (`e2e/upload.spec.ts`): on `/resumes`, upload a PDF rendered from `TextDocumentPDF` in the test (write to `test-results/`) → review step shows text containing the rendered body → Save → new card appears with toast; "View PDF" opens a dialog whose iframe `src` is a Supabase signed URL. Second test: a seeded document whose object was removed via `admin().storage.remove` → clicking "View PDF" shows "File unavailable" (no broken iframe).
+- [ ] **Step 2: Failing e2e** (`e2e/upload.spec.ts`): on `/resumes`, upload a PDF rendered from `TextDocumentPDF` in the test (write to `test-results/`) → review step shows text containing the rendered body → Save → new card appears with toast; "View PDF" opens a dialog whose iframe `src` is a Supabase signed URL. Second test: a seeded document whose object was removed via `admin().storage.remove` → clicking "View PDF" shows "File unavailable" (no broken iframe). Third test (forged row): as the e2e user, insert a `documents` row through the **browser** Supabase client (`page.evaluate`) whose `s3_key` is `resumes/<another-user-uuid>/x/a.pdf` → `GET /api/view-resume?documentId=<that id>` returns 403 and no signed URL.
 
 - [ ] **Step 3: Run — expect FAIL.**
 
-- [ ] **Step 4: Implement.** Upload route: same auth + MIME whitelist, key `resumes/${user.id}/${randomUUID()}/${safeFilename(filename)}`, `createSignedUploadUrl(key)`. Parse route: `isOwnedKey` guard, `download(key)`, reject `blob.size > 10 MB`, rest unchanged. View route: `createSignedUrl(document.s3_key, 300)`. PDF route: `upload(key, pdfBuffer, { contentType: "application/pdf" })` under `cover_letters/${user.id}/…`, then `createSignedUrl(key, 3600, { download: filename })`. `saveDocument`: replace the `startsWith` check with `isOwnedKey`. PDF iframe gets `title`; ResumeCard's PDF modal uses `Dialog`.
+- [ ] **Step 4: Implement.** Upload route: same auth + MIME whitelist, key `resumes/${user.id}/${randomUUID()}/${safeFilename(filename)}`, `createSignedUploadUrl(key)`. Parse route: `isOwnedKey` guard, `download(key)`, reject `blob.size > 10 MB`, rest unchanged. View route: after the row-ownership query, `isOwnedKey(document.s3_key, user.id, "resumes")` else 403 (row ownership does not prove key ownership — RLS on `documents` checks only `user_id`, and the service-role client bypasses Storage RLS); then `createSignedUrl(document.s3_key, 300)`. PDF route: `upload(key, pdfBuffer, { contentType: "application/pdf" })` under `cover_letters/${user.id}/…`, then `createSignedUrl(key, 3600, { download: filename })`. `saveDocument`: replace the `startsWith` check with `isOwnedKey`. PDF iframe gets `title`; ResumeCard's PDF modal uses `Dialog`.
 
 - [ ] **Step 5: Run — expect PASS.** Append `resumes` to `AXE_ROUTES`.
 
@@ -233,14 +243,14 @@ expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 - Produces: `setApplicationResume(applicationId: string, resumeId: string): Promise<{ error?: string }>` in `applications/actions.ts` — verifies both rows belong to `user.id` (document `type = "resume"`), updates `applications.resume_id`, `revalidatePath` of both AI pages.
 - Produces: `<ResumePicker applicationId currentResumeId resumes />` — `Select`; on change calls `setApplicationResume`, toasts, `router.refresh()`. Empty list → link to `/resumes`.
 - Produces: `streamCoverLetter(params) : StreamTextResult` replaces `generateCoverLetter` in `lib/ai/cover-letter.ts` (same params; `streamText` with `maxRetries: 3`).
-- Produces: `textStreamOrAbort(fullStream: AsyncIterable<TextStreamPart<ToolSet>>): ReadableStream<Uint8Array>` in `src/lib/ai/text-stream.ts` — enqueues encoded `text-delta` parts; on an `error` part (or a thrown iterator) calls `controller.error(...)` so the HTTP body aborts instead of ending cleanly. Do **not** use `toTextStreamResponse()`: it drops error parts and ends the body normally (verified on `ai@6.0.146`).
+- Produces: `textStreamOrAbort(fullStream: AsyncIterable<TextStreamPart<ToolSet>>): ReadableStream<Uint8Array>` in `src/lib/ai/text-stream.ts` — enqueues encoded `text-delta` parts; calls `controller.error(...)` — so the HTTP body aborts instead of ending cleanly — on an `error` part, a thrown iterator, a `finish` part whose `finishReason !== "stop"` (`length`, `content-filter`, `error`, …), or the iterator ending without any `finish` part. Closes normally only after `finish` with `stop`. Do **not** use `toTextStreamResponse()`: it drops error parts and ends the body normally (verified on `ai@6.0.146`).
 - Produces: `POST /api/ai/cover-letter` → `new Response(textStreamOrAbort(result.fullStream), { headers: { "content-type": "text/plain; charset=utf-8" } })`; validation/rate-limit errors stay JSON with the same status codes. Persists `ai_results` in `onFinish` only when `finishReason === "stop"`.
 - Produces: `readTextStream(res: Response, onText: (full: string) => void): Promise<string>` — reads `res.body` with `TextDecoder`, calls `onText` with the accumulated text per chunk, resolves the full text, rejects if the stream errors.
 - Produces: `saveCoverLetter(applicationId: string, coverLetter: string): Promise<{ error?: string }>` — ownership check, 50 KB cap, updates the latest `cover_letter` `ai_results` row's `result` (inserts if none).
 
 - [ ] **Step 1: Failing unit tests** (`e2e/read-text-stream.spec.ts`): a `Response` over a `ReadableStream` enqueuing `"Dear "`, `"Hiring "`, `"Team"` → `onText` called with `"Dear "`, `"Dear Hiring "`, `"Dear Hiring Team"`; resolves `"Dear Hiring Team"`. A stream that enqueues `"Dear "` then `controller.error(new Error("drop"))` → rejects, and the last `onText` value was `"Dear "`.
 
-  `e2e/text-stream.spec.ts` (server side, the real SDK failure path): `streamText` with `MockLanguageModelV3` from `ai/test` whose `doStream` emits `stream-start`, `text-start`, `text-delta "Dear Hiring "`, then `{ type: "error", error: new Error("provider dropped") }`; pipe `textStreamOrAbort(result.fullStream)` into `new Response(...)` → `await res.text()` **rejects**; and a spy `onFinish` sees `finishReason === "error"` (so the route's `=== "stop"` guard skips persistence). Happy path (`finish` part with reason `stop`) → `res.text()` resolves `"Dear Hiring Team"`.
+  `e2e/text-stream.spec.ts` (server side, the real SDK failure path): `streamText` with `MockLanguageModelV3` from `ai/test` whose `doStream` emits `stream-start`, `text-start`, `text-delta "Dear Hiring "`, then `{ type: "error", error: new Error("provider dropped") }`; pipe `textStreamOrAbort(result.fullStream)` into `new Response(...)` → `await res.text()` **rejects**; and a spy `onFinish` sees `finishReason === "error"` (so the route's `=== "stop"` guard skips persistence). Same partial text, then a `finish` part with `finishReason: "length"` and no error part → `res.text()` **rejects** (repeat for `"content-filter"`). Happy path (`finish` part with reason `stop`) → `res.text()` resolves `"Dear Hiring Team"`.
 
 - [ ] **Step 2: Failing e2e** (`e2e/ai-flow.spec.ts`, AI endpoints mocked with `page.route`)
   - "picker switches resume": on `/applications/[id]/resume` choose the second seeded resume → toast; reload → picker shows it.
