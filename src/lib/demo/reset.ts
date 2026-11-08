@@ -70,14 +70,12 @@ export async function resetDemoUser(
   const { password, failAt } = opts
 
   // 1. Resolve exactly one user.
+  // The password is only set on create: changing it revokes the user's sessions (e.g. the e2e storage state).
   let userId = await findUserId(admin, email)
   if (!userId) {
     const { data, error } = await admin.auth.admin.createUser({ email: email.trim(), email_confirm: true, password })
     if (error) throw error
     userId = data.user.id
-  } else if (password) {
-    const { error } = await admin.auth.admin.updateUserById(userId, { password })
-    if (error) throw error
   }
   // A blank id would turn every prefix below into "resumes/" — every user's files.
   if (!UUID.test(userId)) throw new Error("Demo reset resolved an invalid user id")
