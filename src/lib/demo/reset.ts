@@ -2,7 +2,7 @@
 import { randomUUID } from "crypto"
 import { createElement, type ReactElement } from "react"
 import { renderToBuffer, type DocumentProps } from "@react-pdf/renderer"
-import type { SupabaseClient } from "@supabase/supabase-js"
+import { createClient, type SupabaseClient } from "@supabase/supabase-js"
 import { BUCKET } from "@/lib/storage-keys"
 import { TextDocumentPDF } from "@/lib/pdf/text-document-template"
 import {
@@ -70,12 +70,23 @@ export async function resetDemoUser(
   const { password, failAt } = opts
 
   // 1. Resolve exactly one user.
-  // The password is only set on create: changing it revokes the user's sessions (e.g. the e2e storage state).
   let userId = await findUserId(admin, email)
   if (!userId) {
     const { data, error } = await admin.auth.admin.createUser({ email: email.trim(), email_confirm: true, password })
     if (error) throw error
     userId = data.user.id
+  } else if (password) {
+    // Only repair a wrong password: setting it revokes the user's sessions (e.g. the e2e storage state).
+    const anon = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    })
+    const { error } = await anon.auth.signInWithPassword({ email: email.trim(), password })
+    if (error?.code === "invalid_credentials") {
+      const { error: updateError } = await admin.auth.admin.updateUserById(userId, { password })
+      if (updateError) throw updateError
+    } else if (error) {
+      throw error
+    }
   }
   // A blank id would turn every prefix below into "resumes/" — every user's files.
   if (!UUID.test(userId)) throw new Error("Demo reset resolved an invalid user id")
@@ -118,17 +129,6 @@ export async function resetDemoUser(
   }
 
   // 5. Insert the new rows next to the old ones.
-  const [oldApps, oldDocs] = await Promise.all([
-    admin.from("applications").select("id").eq("user_id", userId),
-    admin.from("documents").select("id").eq("user_id", userId),
-  ])
-  if (oldApps.error || oldDocs.error) {
-    await removeUploads()
-    throw oldApps.error ?? oldDocs.error
-  }
-  const oldAppIds = oldApps.data.map((r) => r.id)
-  const oldDocIds = oldDocs.data.map((r) => r.id)
-
   const now = Date.now()
   const daysAgo = (d: number) => new Date(now - d * DAY).toISOString()
   const appRows = SEED_APPLICATIONS.map(({ appliedDaysAgo, createdDaysAgo, interviewInDays, ...a }) => ({
@@ -173,10 +173,12 @@ export async function resetDemoUser(
     throw e
   }
 
-  // 6. Delete the old rows (applications cascade to ai_results, which has no user_id).
+  // 6. Delete every other row the user owns (applications cascade to ai_results, which has no user_id).
+  // "All but the new ids" instead of a list of old ids: reads are capped at the API's max rows.
   // A failure here leaves old + new rows — duplicates, never an empty demo; the next reset cleans up.
-  if (oldDocIds.length) await must(admin.from("documents").delete().in("id", oldDocIds).eq("user_id", userId))
-  if (oldAppIds.length) await must(admin.from("applications").delete().in("id", oldAppIds).eq("user_id", userId))
+  const notIn = (rows: { id: string }[]) => `(${rows.map((r) => r.id).join(",")})`
+  await must(admin.from("documents").delete().eq("user_id", userId).not("id", "in", notIn(docRows)))
+  await must(admin.from("applications").delete().eq("user_id", userId).not("id", "in", notIn(appRows)))
 
   // 7. Remove the old files.
   if (oldKeys.length) {

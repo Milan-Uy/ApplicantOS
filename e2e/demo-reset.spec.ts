@@ -1,5 +1,7 @@
 import { test, expect } from "@playwright/test"
+import { createClient } from "@supabase/supabase-js"
 import { listAllKeys, resetDemoUser } from "@/lib/demo/reset"
+import { BUCKET } from "@/lib/storage-keys"
 import { SEED_APPLICATIONS, SEED_RESUMES } from "@/lib/demo/seed-data"
 import { admin, E2E_EMAIL, E2E_PASSWORD, resetForSpec } from "./fixtures"
 
@@ -64,6 +66,38 @@ test("is idempotent and leaves other users untouched", async () => {
     .select("*", { count: "exact", head: true })
     .eq("user_id", e2eId)
   expect(count).toBe(SEED_APPLICATIONS.length)
+})
+
+test("removes every old row even past the API row cap", async () => {
+  const extra = Array.from({ length: 1001 }, (_, i) => ({ user_id: e2eId, company: `Bulk ${i}`, role: "Filler", status: "wishlist" }))
+  const { error } = await admin().from("applications").insert(extra)
+  expect(error).toBeNull()
+  await resetForSpec()
+  const { count } = await admin()
+    .from("applications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", e2eId)
+  expect(count).toBe(SEED_APPLICATIONS.length)
+})
+
+test("repairs a changed password, so login keeps working", async () => {
+  // A throwaway user: changing the e2e user's password would revoke the saved login session.
+  const email = `reset-pw-${Date.now()}@example.com`
+  const anon = () =>
+    createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    })
+  const { userId } = await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+  try {
+    await admin().auth.admin.updateUserById(userId, { password: `${E2E_PASSWORD}-changed` })
+    await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+    const { error } = await anon().auth.signInWithPassword({ email, password: E2E_PASSWORD })
+    expect(error).toBeNull()
+  } finally {
+    const keys = await listAllKeys(admin(), `resumes/${userId}`)
+    if (keys.length) await admin().storage.from(BUCKET).remove(keys)
+    await admin().auth.admin.deleteUser(userId)
+  }
 })
 
 for (const failAt of ["uploads", "inserts"] as const) {
