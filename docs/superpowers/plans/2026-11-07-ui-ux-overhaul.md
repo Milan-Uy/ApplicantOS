@@ -356,3 +356,5 @@ expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 ## Review log
 
 - Review diff r1 2026-11-08, Codex (Task 1, ui/1-test-harness): revise; 3 fixed, 0 rejected, 0 deferred. Session 01a1bb7f-adc8-76f2-970b-7bdab9282123.
+- Review diff r1 2026-11-09, Codex (Task 4, ui/4-storage): revise; 1 fixed (control chars in storage keys bypassed isOwnedKey -> allowlist), 0 rejected, 1 deferred (overlapping demo resets, pre-existing, Task 8). Session 01a1bc03-54ea-7821-9349-c6f62e9edff4.
+- Review did not run 2026-11-09 (Task 4 r2): Codex usage limit; re-run on 614d599 after reset.
