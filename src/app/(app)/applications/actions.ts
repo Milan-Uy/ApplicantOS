@@ -24,12 +24,25 @@ function resolveStatus(
   return submitted
 }
 
+function validateSalaryRange(formData: FormData): void {
+  const minRaw = formData.get("salary_min")
+  const maxRaw = formData.get("salary_max")
+  if (!minRaw || !maxRaw) return
+  const min = Number(minRaw)
+  const max = Number(maxRaw)
+  if (Number.isFinite(min) && Number.isFinite(max) && min > max) {
+    throw new Error("Minimum salary cannot exceed maximum salary")
+  }
+}
+
 export async function createApplication(formData: FormData) {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
+
+  validateSalaryRange(formData)
 
   const newInterviewDate = (formData.get("interview_date") as string) || null
   const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
@@ -72,6 +85,8 @@ export async function updateApplication(id: string, formData: FormData) {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) throw new Error("Unauthorized")
+
+  validateSalaryRange(formData)
 
   const newInterviewDate = (formData.get("interview_date") as string) || null
   const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
