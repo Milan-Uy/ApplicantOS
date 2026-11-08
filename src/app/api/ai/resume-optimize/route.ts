@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
 import { optimizeResume } from "@/lib/ai/resume-optimizer"
 import { checkRateLimit } from "@/lib/rate-limit"
+import { logError } from "@/lib/log"
 
 export async function POST(request: Request) {
   const supabase = await createClient()
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error("Resume optimize error:", error)
+    logError("api.ai.resume-optimize", error, { userId: user.id, applicationId })
     return NextResponse.json(
       { error: "Failed to optimize resume" },
       { status: 500 }

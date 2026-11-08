@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
+import { logError } from "@/lib/log"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -28,7 +29,7 @@ export async function GET(request: NextRequest) {
     .single()
 
   if (error && error.code !== "PGRST116") {
-    console.error("Settings query error:", error)
+    logError("api.job-discovery.settings", error, { userId })
     return NextResponse.json({ error: "Query failed" }, { status: 500 })
   }
 

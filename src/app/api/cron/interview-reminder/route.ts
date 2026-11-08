@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
 import { resend } from "@/lib/resend"
 import { InterviewReminderEmail } from "@/lib/email/interview-reminder"
+import { logError, logInfo } from "@/lib/log"
 import React from "react"
 
 const supabaseAdmin = createClient(
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
     .eq("reminder_sent", false)
 
   if (error) {
-    console.error("Cron query error:", error)
+    logError("api.cron.interview-reminder.query", error)
     return NextResponse.json({ error: "Query failed" }, { status: 500 })
   }
 
@@ -78,7 +79,7 @@ export async function GET(request: NextRequest) {
         .eq("id", app.id)
 
       if (updateError) {
-        console.error(`Failed to mark reminder_sent for application ${app.id}:`, updateError)
+        logError("api.cron.interview-reminder.markSent", updateError, { applicationId: app.id })
         throw updateError
       }
     })
@@ -87,8 +88,15 @@ export async function GET(request: NextRequest) {
   const sent = results.filter((r) => r.status === "fulfilled").length
   const failed = results.filter((r) => r.status === "rejected")
 
-  failed.forEach((r) => console.error("Reminder failed:", r.reason))
+  // index into results (aligned with applications), not into the filtered `failed` list
+  results.forEach((r, i) => {
+    if (r.status === "rejected") {
+      logError("api.cron.interview-reminder.send", r.reason, {
+        applicationId: applications[i].id,
+      })
+    }
+  })
 
-  console.log(`Interview reminders: ${sent} sent, ${failed.length} failed`)
+  logInfo("api.cron.interview-reminder", "completed", { sent, failed: failed.length })
   return NextResponse.json({ sent, failed: failed.length })
 }

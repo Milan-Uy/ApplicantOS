@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
+import { logError } from "@/lib/log"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    console.error("Webhook insert error:", error)
+    logError("api.webhooks.n8n.job-discovery", error, { userId: user_id, url })
     return NextResponse.json({ error: "Insert failed" }, { status: 500 })
   }
 
