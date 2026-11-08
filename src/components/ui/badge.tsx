@@ -30,7 +30,7 @@ export type BadgeVariant = NonNullable<
   VariantProps<typeof badgeVariants>["variant"]
 >
 
-const STATUS_LABELS: Record<string, string> = {
+export const STATUS_LABELS: Record<string, string> = {
   wishlist: "Wishlist",
   applied: "Applied",
   phone_screen: "Phone Screen",

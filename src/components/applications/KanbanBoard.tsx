@@ -9,7 +9,7 @@ import {
   Draggable,
   type DropResult,
 } from "@hello-pangea/dnd"
-import { StatusBadge } from "@/components/ui/badge"
+import { StatusBadge, STATUS_LABELS } from "@/components/ui/badge"
 import { updateApplicationStatus } from "@/app/(app)/applications/actions"
 import type { ApplicationListItem, ApplicationStatus } from "@/types/database"
 import { Briefcase } from "lucide-react"
@@ -57,6 +57,7 @@ export function KanbanBoard({
       // useOptimistic reverts the card on its own once the transition ends.
       try {
         await updateApplicationStatus(draggableId, newStatus)
+        toast.success(`Moved to ${STATUS_LABELS[newStatus]}`)
       } catch {
         toast.error("Couldn't move card")
       }

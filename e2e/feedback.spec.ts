@@ -6,6 +6,11 @@ test.beforeAll(async () => {
   await resetForSpec()
 })
 
+// Later specs (screens) screenshot this user's data: don't leave test rows behind.
+test.afterAll(async () => {
+  await resetForSpec()
+})
+
 // Filling before hydration loses the input and submits natively; wait for the client bundle.
 async function open(page: Page, path: string) {
   await page.goto(path)
@@ -36,6 +41,28 @@ test("create lands on the new record", async ({ page }) => {
   await expect(page).toHaveURL(/\/applications\/[0-9a-f-]{36}$/, { timeout: 30_000 })
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(role)
   await expect(page.getByRole("main")).toContainText(/referral/i)
+  await expect(errorToast(page)).toHaveCount(0)
+})
+
+test("edit lands on the record with no error", async ({ page, heroAppId }) => {
+  await open(page, `/applications/${heroAppId}/edit`)
+  await page.getByLabel("Location").fill("Remote (edited)")
+  await page.getByRole("button", { name: "Save Changes" }).click()
+  await expect(page).toHaveURL(new RegExp(`/applications/${heroAppId}$`), { timeout: 30_000 })
+  await expect(page.getByRole("main")).toContainText("Remote (edited)")
+  await expect(errorToast(page)).toHaveCount(0)
+})
+
+test("server-side validation error toasts and keeps the form", async ({ page }) => {
+  await open(page, "/applications/new")
+  await page.getByLabel("Role *").fill("Range Check")
+  await page.getByLabel("Salary Min").fill("200")
+  await page.getByLabel("Salary Max").fill("100")
+  await page.getByRole("button", { name: "Save Application" }).click()
+  await expect(errorToast(page)).toContainText("Minimum salary cannot exceed maximum salary")
+  await expect(page).toHaveURL(/\/applications\/new$/)
+  await expect(page.getByLabel("Role *")).toHaveValue("Range Check")
+  await expect(page.getByLabel("Salary Min")).toHaveValue("200")
 })
 
 test("failed create keeps every value", async ({ page }) => {
@@ -117,6 +144,7 @@ test("kanban move persists", async ({ page }) => {
   await expect
     .poll(async () => (await admin().from("applications").select("status").eq("id", id).single()).data?.status)
     .toBe("applied")
+  await expect(page.locator('[data-sonner-toast][data-type="success"]')).toContainText("Moved to Applied")
 })
 
 test("failed kanban move toasts and puts the card back", async ({ page }) => {
