@@ -42,3 +42,9 @@ next-env.d.ts
 
 # claude code personal settings
 .claude/settings.local.json
+
+# local-only files
+.agents/
+.vscode/
+resume.md
+interview-prep.md
