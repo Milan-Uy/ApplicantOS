@@ -35,7 +35,7 @@
   --color-input: rgba(255, 255, 255, 0.08);
   --color-ring: #5e6ad2;
 
-  --color-destructive: #ef4444;
+  --color-destructive: #f87171; /* red-400: >= 4.5:1 under its own 20% tint on card and popover; #ef4444 was 3.8-4.4 */
   --color-destructive-fg: #ffffff;
   --color-success: #10b981;
 

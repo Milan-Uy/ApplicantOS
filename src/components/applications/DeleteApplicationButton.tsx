@@ -1,18 +1,26 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import { deleteApplication } from "@/app/(app)/applications/actions"
+import { ConfirmDelete } from "@/components/ConfirmDelete"
+import { Button } from "@/components/ui/button"
 
 export function DeleteApplicationButton({ id }: { id: string }) {
+  const router = useRouter()
   return (
-    <button
-      onClick={async () => {
-        if (confirm("Are you sure you want to delete this application?")) {
-          await deleteApplication(id)
-        }
+    <ConfirmDelete
+      title="Delete this application?"
+      description="This removes the application and its AI results. It can't be undone."
+      successMessage="Application deleted"
+      onConfirm={async () => {
+        await deleteApplication(id)
+        router.push("/applications")
       }}
-      className="px-4 py-2 rounded-lg border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-    >
-      Delete Application
-    </button>
+      trigger={
+        <Button variant="destructive" size="lg">
+          Delete Application
+        </Button>
+      }
+    />
   )
 }

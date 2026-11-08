@@ -4,13 +4,13 @@ import { FileText, Trash2, X } from "lucide-react"
 import type { Document } from "@/types/database"
 import { deleteDocument } from "@/app/(app)/resumes/actions"
 import { useState, useEffect } from "react"
+import { ConfirmDelete } from "@/components/ConfirmDelete"
 
 interface ResumeCardProps {
   document: Document
 }
 
 export function ResumeCard({ document }: ResumeCardProps) {
-  const [deleting, setDeleting] = useState(false)
   const [showText, setShowText] = useState(false)
   const [pdfOpen, setPdfOpen] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
@@ -24,16 +24,6 @@ export function ResumeCard({ document }: ResumeCardProps) {
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [pdfOpen])
-
-  const handleDelete = async () => {
-    if (!confirm("Delete this resume?")) return
-    setDeleting(true)
-    try {
-      await deleteDocument(document.id)
-    } catch {
-      setDeleting(false)
-    }
-  }
 
   const handleOpenPdf = async () => {
     if (pdfUrl) {
@@ -93,14 +83,20 @@ export function ResumeCard({ document }: ResumeCardProps) {
               </button>
             )}
           </div>
-          <button
-            onClick={handleDelete}
-            disabled={deleting}
-            className="ml-auto p-1.5 rounded-md text-muted-fg hover:text-red-400 hover:bg-red-400/10 transition-colors disabled:opacity-50"
-            aria-label="Delete resume"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
+          <ConfirmDelete
+            title="Delete this resume?"
+            description="Applications using it keep their data, but lose the link to this file."
+            successMessage="Resume deleted"
+            onConfirm={() => deleteDocument(document.id)}
+            trigger={
+              <button
+                className="ml-auto p-1.5 rounded-md text-muted-fg hover:text-red-400 hover:bg-red-400/10 transition-colors"
+                aria-label="Delete resume"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            }
+          />
         </div>
 
         {showText && document.extracted_text && (

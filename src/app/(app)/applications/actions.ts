@@ -24,72 +24,82 @@ function resolveStatus(
   return submitted
 }
 
-function validateSalaryRange(formData: FormData): void {
+function salaryRangeError(formData: FormData): string | null {
   const minRaw = formData.get("salary_min")
   const maxRaw = formData.get("salary_max")
-  if (!minRaw || !maxRaw) return
+  if (!minRaw || !maxRaw) return null
   const min = Number(minRaw)
   const max = Number(maxRaw)
-  if (Number.isFinite(min) && Number.isFinite(max) && min > max) {
-    throw new Error("Minimum salary cannot exceed maximum salary")
+  return Number.isFinite(min) && Number.isFinite(max) && min > max
+    ? "Minimum salary cannot exceed maximum salary"
+    : null
+}
+
+// Columns shared by create and update; empty strings become null.
+function applicationFields(formData: FormData) {
+  const str = (name: string) => (formData.get(name) as string) || null
+  const num = (name: string) => (formData.get(name) ? Number(formData.get(name)) : null)
+  const interviewDate = str("interview_date")
+  const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
+  return {
+    company: formData.get("company") as string,
+    role: formData.get("role") as string,
+    url: str("url"),
+    status: resolveStatus(submittedStatus, interviewDate),
+    source: str("source"),
+    salary_min: num("salary_min"),
+    salary_max: num("salary_max"),
+    salary_currency: str("salary_currency"),
+    salary_period: str("salary_period"),
+    location: str("location"),
+    job_description: str("job_description"),
+    notes: str("notes"),
+    contact_name: str("contact_name"),
+    contact_email: str("contact_email"),
+    resume_id: str("resume_id"),
+    interview_date: interviewDate,
+    applied_at: str("applied_at"),
+    follow_up_at: str("follow_up_at"),
   }
 }
 
-export async function createApplication(formData: FormData) {
+// Expected failures come back as { error } so the form keeps its values; redirect() stays outside any try.
+export async function createApplication(formData: FormData): Promise<{ error: string } | void> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { error: "Unauthorized" }
 
-  validateSalaryRange(formData)
+  const rangeError = salaryRangeError(formData)
+  if (rangeError) return { error: rangeError }
 
-  const newInterviewDate = (formData.get("interview_date") as string) || null
-  const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
+  const { data, error } = await supabase
+    .from("applications")
+    .insert({ user_id: user.id, ...applicationFields(formData) })
+    .select("id")
+    .single()
 
-  const { error } = await supabase.from("applications").insert({
-    user_id: user.id,
-    company: formData.get("company") as string,
-    role: formData.get("role") as string,
-    url: (formData.get("url") as string) || null,
-    status: resolveStatus(submittedStatus, newInterviewDate),
-    source: (formData.get("source") as string) || null,
-    salary_min: formData.get("salary_min")
-      ? Number(formData.get("salary_min"))
-      : null,
-    salary_max: formData.get("salary_max")
-      ? Number(formData.get("salary_max"))
-      : null,
-    salary_currency: (formData.get("salary_currency") as string) || null,
-    salary_period: (formData.get("salary_period") as string) || null,
-    location: (formData.get("location") as string) || null,
-    job_description: (formData.get("job_description") as string) || null,
-    notes: (formData.get("notes") as string) || null,
-    contact_name: (formData.get("contact_name") as string) || null,
-    contact_email: (formData.get("contact_email") as string) || null,
-    resume_id: (formData.get("resume_id") as string) || null,
-    interview_date: newInterviewDate,
-    applied_at: (formData.get("applied_at") as string) || null,
-    follow_up_at: (formData.get("follow_up_at") as string) || null,
-  })
-
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath("/applications")
-  redirect("/applications")
+  redirect(`/applications/${data.id}`)
 }
 
-export async function updateApplication(id: string, formData: FormData) {
+export async function updateApplication(
+  id: string,
+  formData: FormData
+): Promise<{ error: string } | void> {
   const supabase = await createClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
+  if (!user) return { error: "Unauthorized" }
 
-  validateSalaryRange(formData)
+  const rangeError = salaryRangeError(formData)
+  if (rangeError) return { error: rangeError }
 
-  const newInterviewDate = (formData.get("interview_date") as string) || null
-  const submittedStatus = (formData.get("status") as ApplicationStatus) || "wishlist"
+  const fields = applicationFields(formData)
 
   const { data: existing } = await supabase
     .from("applications")
@@ -99,40 +109,19 @@ export async function updateApplication(id: string, formData: FormData) {
     .single()
 
   // Reset reminder_sent so the day-before cron picks up the new date.
-  const interviewDateChanged = existing?.interview_date !== newInterviewDate
+  const interviewDateChanged = existing?.interview_date !== fields.interview_date
 
   const { error } = await supabase
     .from("applications")
     .update({
-      company: formData.get("company") as string,
-      role: formData.get("role") as string,
-      url: (formData.get("url") as string) || null,
-      status: resolveStatus(submittedStatus, newInterviewDate),
-      source: (formData.get("source") as string) || null,
-      salary_min: formData.get("salary_min")
-        ? Number(formData.get("salary_min"))
-        : null,
-      salary_max: formData.get("salary_max")
-        ? Number(formData.get("salary_max"))
-        : null,
-      salary_currency: (formData.get("salary_currency") as string) || null,
-      salary_period: (formData.get("salary_period") as string) || null,
-      location: (formData.get("location") as string) || null,
-      job_description: (formData.get("job_description") as string) || null,
-      notes: (formData.get("notes") as string) || null,
-      contact_name: (formData.get("contact_name") as string) || null,
-      contact_email: (formData.get("contact_email") as string) || null,
-      resume_id: (formData.get("resume_id") as string) || null,
-      interview_date: newInterviewDate,
-      applied_at: (formData.get("applied_at") as string) || null,
-      follow_up_at: (formData.get("follow_up_at") as string) || null,
+      ...fields,
       updated_at: new Date().toISOString(),
       ...(interviewDateChanged ? { reminder_sent: false } : {}),
     })
     .eq("id", id)
     .eq("user_id", user.id)
 
-  if (error) throw new Error(error.message)
+  if (error) return { error: error.message }
 
   revalidatePath("/applications")
   revalidatePath(`/applications/${id}`)
@@ -171,6 +160,6 @@ export async function deleteApplication(id: string) {
 
   if (error) throw new Error(error.message)
 
+  // No redirect: the caller toasts, then navigates.
   revalidatePath("/applications")
-  redirect("/applications")
 }

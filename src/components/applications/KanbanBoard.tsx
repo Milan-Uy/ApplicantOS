@@ -2,6 +2,7 @@
 
 import { useOptimistic, useTransition } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import {
   DragDropContext,
   Droppable,
@@ -12,6 +13,9 @@ import { StatusBadge } from "@/components/ui/badge"
 import { updateApplicationStatus } from "@/app/(app)/applications/actions"
 import type { ApplicationListItem, ApplicationStatus } from "@/types/database"
 import { Briefcase } from "lucide-react"
+import { EmptyState } from "@/components/EmptyState"
+import { Button } from "@/components/ui/button"
+import { formatSalary } from "@/lib/format"
 
 const STATUSES: ApplicationStatus[] = [
   "wishlist",
@@ -50,29 +54,27 @@ export function KanbanBoard({
 
     startTransition(async () => {
       updateOptimistic({ id: draggableId, status: newStatus })
-      await updateApplicationStatus(draggableId, newStatus)
+      // useOptimistic reverts the card on its own once the transition ends.
+      try {
+        await updateApplicationStatus(draggableId, newStatus)
+      } catch {
+        toast.error("Couldn't move card")
+      }
     })
   }
 
   if (optimisticApps.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-          <Briefcase className="w-6 h-6 text-muted-fg" />
-        </div>
-        <h3 className="text-sm font-semibold text-foreground">
-          No applications yet
-        </h3>
-        <p className="text-sm text-muted-fg mt-1 max-w-xs">
-          Start by adding your first job application.
-        </p>
-        <Link
-          href="/applications/new"
-          className="mt-4 px-4 py-2 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          Add Application
-        </Link>
-      </div>
+      <EmptyState
+        icon={Briefcase}
+        title="No applications yet"
+        description="Start by adding your first job application."
+        action={
+          <Button asChild>
+            <Link href="/applications/new">Add Application</Link>
+          </Button>
+        }
+      />
     )
   }
 
@@ -110,47 +112,38 @@ export function KanbanBoard({
                       index={index}
                     >
                       {(provided, snapshot) => (
-                        <div
+                        // The card is the link and the drag handle at once: nesting a link in a role=button
+                        // handle is an axe nested-interactive violation. role is dropped to keep link semantics.
+                        <Link
+                          href={`/applications/${app.id}`}
                           ref={provided.innerRef}
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
-                          className={`bg-card rounded-lg border border-border shadow-card p-4 cursor-grab active:cursor-grabbing hover:shadow-card-hover transition-shadow duration-150 ${
+                          role={undefined}
+                          className={`block bg-card rounded-lg border border-border shadow-card p-4 cursor-grab active:cursor-grabbing hover:shadow-card-hover transition-shadow duration-150 ${
                             snapshot.isDragging ? "shadow-card-hover" : ""
                           }`}
                         >
-                          <Link href={`/applications/${app.id}`}>
-                            <p className="text-sm font-semibold text-foreground truncate">
-                              {app.role}
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {app.role}
+                          </p>
+                          <p className="text-xs text-muted-fg mt-0.5 truncate">
+                            {app.company}
+                          </p>
+                          {formatSalary(app) && (
+                            <p className="text-xs text-success font-medium mt-2">
+                              {formatSalary(app)}
                             </p>
-                            <p className="text-xs text-muted-fg mt-0.5 truncate">
-                              {app.company}
+                          )}
+                          {app.interview_date && (
+                            <p className="mt-2 text-xs text-amber-400">
+                              Interview:{" "}
+                              {new Date(
+                                app.interview_date
+                              ).toLocaleDateString()}
                             </p>
-                            {app.salary_min && (
-                              <p className="text-xs text-[#10b981] font-medium mt-2">
-                                {[
-                                  app.salary_currency,
-                                  (app.salary_min >= 1000
-                                    ? `${Math.round(app.salary_min / 1000)}k`
-                                    : app.salary_min.toLocaleString()) +
-                                    (app.salary_max
-                                      ? `–${app.salary_max >= 1000 ? `${Math.round(app.salary_max / 1000)}k` : app.salary_max.toLocaleString()}`
-                                      : "+"),
-                                  app.salary_period === "hourly" ? "/hr" : app.salary_period === "monthly" ? "/mo" : null,
-                                ]
-                                  .filter(Boolean)
-                                  .join(" ")}
-                              </p>
-                            )}
-                            {app.interview_date && (
-                              <p className="mt-2 text-xs text-amber-400">
-                                Interview:{" "}
-                                {new Date(
-                                  app.interview_date
-                                ).toLocaleDateString()}
-                              </p>
-                            )}
-                          </Link>
-                        </div>
+                          )}
+                        </Link>
                       )}
                     </Draggable>
                   ))}

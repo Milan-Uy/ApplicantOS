@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { toast } from "sonner"
 import { updateProfile } from "./actions"
 
 type State = { error?: string; success?: boolean; message?: string } | null
@@ -25,10 +26,12 @@ export function ProfileForm({
   defaultName: string
   defaultEmail: string
 }) {
-  const [state, formAction] = useActionState<State, FormData>(
-    async (_prev, formData) => updateProfile(formData),
-    null
-  )
+  const [, formAction] = useActionState<State, FormData>(async (_prev, formData) => {
+    const result = await updateProfile(formData)
+    if (result.error) toast.error(result.error)
+    else toast.success(result.message)
+    return result
+  }, null)
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -43,13 +46,6 @@ export function ProfileForm({
           Changing email sends a confirmation link to the new address.
         </p>
       </div>
-
-      {state?.error && (
-        <p className="text-sm text-destructive">{state.error}</p>
-      )}
-      {state?.success && state.message && (
-        <p className="text-sm text-primary">{state.message}</p>
-      )}
 
       <div>
         <SaveButton />
