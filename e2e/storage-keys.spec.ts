@@ -24,6 +24,9 @@ test("isOwnedKey", () => {
   expect(isOwnedKey(`resumes/${uid}/x\\..\\a.pdf`, uid, "resumes")).toBe(false)
   expect(isOwnedKey(`resumes/${uid}//a.pdf`, uid, "resumes")).toBe(false)
   expect(isOwnedKey(`resumes/${uid}/a.pdf?x`, uid, "resumes")).toBe(false)
+  // the URL parser strips tab/CR/LF, so ".\t." becomes ".."
+  for (const c of ["\t", "\n", "\r"]) expect(isOwnedKey(`resumes/${uid}/.${c}./${other}/a.pdf`, uid, "resumes")).toBe(false)
+  expect(isOwnedKey(`resumes/${uid}/.../a.pdf`, uid, "resumes")).toBe(false)
   expect(isOwnedKey(`resumes/${uid}/a.pdf`, uid, "cover_letters")).toBe(false)
   expect(isOwnedKey(`resumes//a.pdf`, "", "resumes")).toBe(false)
   // keys the demo reset writes must stay valid

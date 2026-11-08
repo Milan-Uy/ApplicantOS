@@ -15,11 +15,10 @@ export function safeFilename(name: string): string {
 
 /**
  * True only for a key inside `${prefix}/${userId}/` that cannot resolve elsewhere.
- * `%` is refused because storage-js does not encode paths and fetch resolves `%2e%2e` as `..`;
- * `?`/`#` would truncate the path.
+ * Allowlist, not denylist: storage-js does not encode paths, and fetch's URL parser turns
+ * `%2e%2e`, `\` and `.<tab>.` into traversal. Every key this app writes uses only these characters.
  */
 export function isOwnedKey(key: string, userId: string, prefix: "resumes" | "cover_letters"): boolean {
-  if (!userId || /[\\%?#]|\/\//.test(key)) return false
-  if (!key.startsWith(`${prefix}/${userId}/`)) return false
-  return !key.split("/").some((s) => s === "." || s === "..")
+  if (!userId || !key.startsWith(`${prefix}/${userId}/`)) return false
+  return key.split("/").every((s) => /^[A-Za-z0-9._-]+$/.test(s) && !/^\.+$/.test(s))
 }
