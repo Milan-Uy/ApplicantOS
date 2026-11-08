@@ -2,11 +2,10 @@
 import React from "react"
 import { NextRequest, NextResponse } from "next/server"
 import { renderToBuffer } from "@react-pdf/renderer"
-import { PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { randomUUID } from "crypto"
 import { createClient } from "@/lib/supabase/server"
-import { s3 } from "@/lib/s3"
+import { storageAdmin } from "@/lib/storage"
+import { safeFilename } from "@/lib/storage-keys"
 import { CoverLetterPDF } from "@/lib/pdf/cover-letter-template"
 import { logError } from "@/lib/log"
 
@@ -54,18 +53,13 @@ export async function POST(request: NextRequest) {
     // Render PDF
     const pdfBuffer = await renderToBuffer(pdfElement)
 
-    // Upload to S3
-    const filename = `${application.company.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-cover-letter.pdf`
+    // company is optional; fall back to the role
+    const filename = safeFilename(`${application.company || application.role}-cover-letter.pdf`)
     const key = `cover_letters/${user.id}/${randomUUID()}/${filename}`
+    const storage = storageAdmin()
 
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: key,
-        Body: pdfBuffer,
-        ContentType: "application/pdf",
-      })
-    )
+    const { error: uploadError } = await storage.upload(key, pdfBuffer, { contentType: "application/pdf" })
+    if (uploadError) throw uploadError
 
     // Save document record
     const { error: insertError } = await supabase.from("documents").insert({
@@ -87,17 +81,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate download URL (1 hour expiry)
-    const downloadUrl = await getSignedUrl(
-      s3,
-      new GetObjectCommand({
-        Bucket: process.env.AWS_S3_BUCKET!,
-        Key: key,
-        ResponseContentDisposition: `attachment; filename="${filename}"`,
-      }),
-      { expiresIn: 3600 }
-    )
+    const { data: signed, error: signError } = await storage.createSignedUrl(key, 3600, { download: filename })
+    if (signError) throw signError
 
-    return NextResponse.json({ downloadUrl })
+    return NextResponse.json({ downloadUrl: signed.signedUrl })
   } catch (error) {
     logError("api.pdf.cover-letter.generate", error, {
       userId: user.id,

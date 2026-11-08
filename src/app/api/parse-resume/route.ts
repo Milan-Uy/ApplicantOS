@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { GetObjectCommand } from "@aws-sdk/client-s3"
 import { createClient } from "@/lib/supabase/server"
-import { s3 } from "@/lib/s3"
+import { storageAdmin } from "@/lib/storage"
+import { isOwnedKey } from "@/lib/storage-keys"
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -25,25 +25,23 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  if (!s3Key.startsWith(`resumes/${user.id}/`)) {
+  if (!isOwnedKey(s3Key, user.id, "resumes")) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
-  const command = new GetObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET!,
-    Key: s3Key,
-  })
+  const { data: blob, error } = await storageAdmin().download(s3Key)
+  if (error || !blob) {
+    return NextResponse.json({ error: "File unavailable" }, { status: 404 })
+  }
 
-  const response = await s3.send(command)
-
-  if (response.ContentLength && response.ContentLength > 10 * 1024 * 1024) {
+  if (blob.size > 10 * 1024 * 1024) {
     return NextResponse.json({ error: "File too large (max 10 MB)" }, { status: 400 })
   }
 
   let text = ""
 
   try {
-    const bytes = await response.Body!.transformToByteArray()
+    const bytes = new Uint8Array(await blob.arrayBuffer())
 
     if (contentType === "application/pdf") {
       const { extractText } = await import("unpdf")

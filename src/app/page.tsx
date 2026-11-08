@@ -647,7 +647,7 @@ export default function LandingPage() {
                       Yours, and only yours.
                     </h3>
                     <p className="text-[13px] text-muted-fg leading-[1.5]">
-                      Resumes are stored encrypted in S3 with row-level security.
+                      Resumes are stored in private, per-user Supabase Storage.
                       We never train on your data, and we never sell it. The only
                       people who see your job search are you and the recruiters you
                       choose.

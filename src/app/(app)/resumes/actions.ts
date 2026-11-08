@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
+import { isOwnedKey } from "@/lib/storage-keys"
 
 export async function saveDocument(formData: FormData) {
   const supabase = await createClient()
@@ -16,7 +17,7 @@ export async function saveDocument(formData: FormData) {
   const s3Key = formData.get("s3Key") as string
   const extractedText = formData.get("extractedText") as string
 
-  if (!s3Key.startsWith(`resumes/${user.id}/`)) {
+  if (!isOwnedKey(s3Key ?? "", user.id, "resumes")) {
     throw new Error("Forbidden")
   }
 

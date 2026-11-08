@@ -4,6 +4,8 @@ import { useCallback, useRef, useState } from "react"
 import { Upload, Loader2, FileText } from "lucide-react"
 import { saveDocument } from "@/app/(app)/resumes/actions"
 import { toast } from "sonner"
+import { createClient } from "@/lib/supabase/client"
+import { BUCKET } from "@/lib/storage-keys"
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
 const ACCEPTED_TYPES = [
@@ -46,7 +48,7 @@ export function ResumeUpload() {
     setFilename(file.name)
 
     try {
-      // Get presigned URL
+      // Get a signed upload token
       setStage("uploading")
       const uploadRes = await fetch("/api/upload", {
         method: "POST",
@@ -54,16 +56,14 @@ export function ResumeUpload() {
         body: JSON.stringify({ filename: file.name, contentType: file.type }),
       })
       if (!uploadRes.ok) throw new Error("Failed to get upload URL")
-      const { url, key } = await uploadRes.json()
+      const { key, token } = await uploadRes.json()
       setS3Key(key)
 
-      // Upload to S3
-      const putRes = await fetch(url, {
-        method: "PUT",
-        headers: { "Content-Type": file.type },
-        body: file,
-      })
-      if (!putRes.ok) throw new Error("Failed to upload file")
+      // Upload straight to Supabase Storage
+      const { error: putError } = await createClient()
+        .storage.from(BUCKET)
+        .uploadToSignedUrl(key, token, file, { contentType: file.type })
+      if (putError) throw new Error("Failed to upload file")
 
       // Parse text
       setStage("parsing")
