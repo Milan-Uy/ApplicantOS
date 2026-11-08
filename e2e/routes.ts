@@ -16,4 +16,4 @@ export const ROUTES: { name: string; path: string; public?: boolean }[] = [
 ]
 
 // Each task appends the routes it brings to zero serious/critical axe violations.
-export const AXE_ROUTES: string[] = []
+export const AXE_ROUTES: string[] = ["dashboard", "settings"]

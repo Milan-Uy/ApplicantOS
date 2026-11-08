@@ -8,17 +8,17 @@ const badgeVariants = cva(
       variant: {
         default: "bg-primary/10 text-primary",
         wishlist:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-muted-fg",
+          "bg-surface-2 border border-border text-xs text-muted-fg",
         applied:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-[#5e6ad2]",
+          "bg-surface-2 border border-border text-xs text-accent",
         phone_screen:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-amber-400",
+          "bg-surface-2 border border-border text-xs text-amber-400",
         interview:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-orange-400",
+          "bg-surface-2 border border-border text-xs text-orange-400",
         offer:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-[#10b981]",
+          "bg-surface-2 border border-border text-xs text-success",
         rejected:
-          "bg-white/[0.05] border border-white/[0.08] text-[12px] text-red-400",
+          "bg-surface-2 border border-border text-xs text-red-400",
         outline: "border border-border text-foreground",
       },
     },

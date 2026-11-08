@@ -57,7 +57,8 @@ E2E_PASSWORD=
 - `src/app/(auth)/` — login, signup. `src/app/auth/callback/` — Supabase OAuth callback.
 - `src/app/api/` — `ai/*` (Gemini), `upload` + `parse-resume` + `view-resume` (S3), `pdf/cover-letter`, `cron/interview-reminder`, `webhooks/n8n/job-discovery`, `job-discovery/settings`.
 - `src/lib/` — `supabase/` clients, `ai/` (prompts + calls), `s3.ts`, `resend.ts`, `email/`, `pdf/`, `rate-limit.ts`, `utils.ts` (`cn()`).
-- `src/components/ui/` — hand-written shadcn-style primitives (no `components.json`; add new ones by hand here).
+- `src/components/ui/` — shadcn/ui (Radix) primitives; use them instead of raw `<button>`/`<input>` class strings. Add with `npx shadcn@latest add <name>`, then: import `cn` from `@/lib/utils` (not `cn`), revert any `globals.css`/`layout.tsx` edits, and swap `bg-accent`/`bg-secondary` for `bg-surface-2` (our accent/secondary are bright, shadcn's are subtle surfaces). `badge.tsx` and `skeleton.tsx` are custom — never `add` over them.
+- `src/components/navigation/nav-items.ts` — `NAV_ITEMS`, `isActive`, shared by Sidebar and MobileNav.
 - `src/types/database.ts` — hand-maintained DB types; update it alongside any schema change.
 
 ## Key Patterns

@@ -12,7 +12,7 @@ for (const name of AXE_ROUTES) {
       await page.waitForLoadState("networkidle")
       const { violations } = await new AxeBuilder({ page }).analyze()
       const blocking = violations.filter((v) => v.impact === "serious" || v.impact === "critical")
-      expect(blocking.map((v) => `${v.id}: ${v.help} (${v.nodes.length})`)).toEqual([])
+      expect(blocking.map((v) => `${v.id}: ${v.help} → ${v.nodes.map((n) => n.target.join(" ")).join(" | ")}`)).toEqual([])
     })
   })
 }

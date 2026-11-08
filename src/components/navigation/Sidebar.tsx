@@ -2,18 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { LayoutDashboard, Briefcase, FileText, Search, Settings, Cpu } from "lucide-react"
+import { Cpu } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { NAV_ITEMS, isActive, navLinkClass } from "./nav-items"
 
-const NAV_ITEMS = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/applications", label: "Applications", icon: Briefcase },
-  { href: "/resumes", label: "Resumes", icon: FileText },
-  { href: "/job-discovery", label: "Job Discovery", icon: Search },
-  { href: "/settings", label: "Settings", icon: Settings },
-]
-
-export function Sidebar() {
+export function Sidebar({ footer }: { footer: React.ReactNode }) {
   const pathname = usePathname()
 
   return (
@@ -24,23 +17,22 @@ export function Sidebar() {
           <Cpu className="w-4 h-4 text-primary-fg" />
         </div>
         <span className="text-base font-bold tracking-tight text-foreground">
-          Applicant<span className="text-primary">OS</span>
+          Applicant<span className="text-accent">OS</span>
         </span>
       </div>
 
       {/* Nav */}
       <nav className="flex flex-col gap-1 p-3 flex-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/")
+          const active = isActive(pathname, href)
           return (
             <Link
               key={href}
               href={href}
+              aria-current={active ? "page" : undefined}
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-colors duration-150",
-                active
-                  ? "bg-white/[0.05] text-foreground"
-                  : "text-muted-fg hover:bg-muted hover:text-foreground"
+                navLinkClass(active)
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -51,16 +43,7 @@ export function Sidebar() {
       </nav>
 
       {/* User footer */}
-      <div className="p-3 border-t border-border">
-        <Link href="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-muted transition-colors">
-          <div className="w-7 h-7 rounded-full bg-white/[0.08] flex items-center justify-center text-xs font-semibold text-foreground">
-            U
-          </div>
-          <span className="text-sm font-medium text-muted-fg truncate">
-            Account
-          </span>
-        </Link>
-      </div>
+      <div className="p-3 border-t border-border">{footer}</div>
     </aside>
   )
 }

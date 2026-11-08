@@ -2,6 +2,9 @@
 
 import { useActionState } from "react"
 import { useFormStatus } from "react-dom"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { updateProfile } from "./actions"
 
 type State = { error?: string; success?: boolean; message?: string } | null
@@ -9,18 +12,11 @@ type State = { error?: string; success?: boolean; message?: string } | null
 function SaveButton() {
   const { pending } = useFormStatus()
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="px-4 py-2 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-    >
+    <Button type="submit" disabled={pending}>
       {pending ? "Saving…" : "Save Changes"}
-    </button>
+    </Button>
   )
 }
-
-const inputClass =
-  "h-10 w-full rounded-lg border border-border bg-card px-3 text-sm text-foreground placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent transition-colors"
 
 export function ProfileForm({
   defaultName,
@@ -37,23 +33,12 @@ export function ProfileForm({
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-foreground">Name</label>
-        <input
-          name="full_name"
-          defaultValue={defaultName}
-          required
-          className={inputClass}
-        />
+        <Label htmlFor="profile-name">Name</Label>
+        <Input id="profile-name" name="full_name" defaultValue={defaultName} required />
       </div>
       <div className="flex flex-col gap-1.5">
-        <label className="text-sm font-medium text-foreground">Email</label>
-        <input
-          name="email"
-          type="email"
-          defaultValue={defaultEmail}
-          required
-          className={inputClass}
-        />
+        <Label htmlFor="profile-email">Email</Label>
+        <Input id="profile-email" name="email" type="email" defaultValue={defaultEmail} required />
         <p className="text-xs text-muted-fg">
           Changing email sends a confirmation link to the new address.
         </p>
