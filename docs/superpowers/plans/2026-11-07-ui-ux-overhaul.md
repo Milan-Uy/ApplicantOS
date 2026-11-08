@@ -352,3 +352,7 @@ expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 | Add application, see it | New → fill → Submit → (lands on list) → click card = 3 clicks + form | New → fill → Submit = 2 clicks + form |
 | Change resume used by AI | Edit → resume select → Save → back to AI page = 4+ clicks | Picker on AI page = 1 change |
 | Keep an edited cover letter | Impossible (edits lost) | Save = 1 click |
+
+## Review log
+
+- Review diff r1 2026-11-08, Codex (Task 1, ui/1-test-harness): revise; 3 fixed, 0 rejected, 0 deferred. Session 01a1bb7f-adc8-76f2-970b-7bdab9282123.
