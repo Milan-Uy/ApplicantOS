@@ -1,4 +1,10 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+/* data-open/data-closed/... variants the shadcn components use */
+@import "shadcn/tailwind.css";
+
+/* <html class="dark"> drives shadcn dark: styles; default dark: would follow the OS */
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   /* Brand — the only chromatic color in the system */
@@ -15,7 +21,7 @@
   --color-foreground: #f7f8f8;
   --color-muted: #0f1011;
   --color-muted-fg: #8a8f98;
-  --color-fg-subtle: #62666d;
+  --color-fg-subtle: #787c85; /* darkest grey at >= 4.5:1 on #08090a and #0f1011 */
   --color-card: #0f1011;
   --color-card-fg: #f7f8f8;
   --color-sidebar: #0f1011;
@@ -31,6 +37,17 @@
 
   --color-destructive: #ef4444;
   --color-destructive-fg: #ffffff;
+  --color-success: #10b981;
+
+  /* shadcn names → our tokens. shadcn's accent/secondary are subtle surfaces; ours are bright,
+     so generated components use surface-2 there instead (--color-accent stays as is). */
+  --color-primary-foreground: var(--color-primary-fg);
+  --color-secondary-foreground: var(--color-secondary-fg);
+  --color-destructive-foreground: var(--color-destructive-fg);
+  --color-card-foreground: var(--color-card-fg);
+  --color-muted-foreground: var(--color-muted-fg);
+  --color-popover: var(--color-surface-2);
+  --color-popover-foreground: var(--color-foreground);
 
   /* Tinted fills */
   --tint-02: rgba(255, 255, 255, 0.02);
@@ -145,12 +162,22 @@
   }
 }
 
-* {
-  border-color: var(--color-border);
-}
 
 html {
   color-scheme: dark;
+}
+
+/* In base so component utilities like outline-none still win over it */
+@layer base {
+  /* Layered so border-* utilities (e.g. Button's border-transparent) override it */
+  * {
+    border-color: var(--color-border);
+  }
+
+  :is(a, button, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
 }
 
 body {

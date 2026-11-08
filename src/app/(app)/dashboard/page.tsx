@@ -90,7 +90,7 @@ export default async function DashboardPage() {
   const maxSource = sourceEntries[0]?.[1] ?? 1
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-8 pb-24 lg:pb-8">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto w-full flex flex-col gap-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -216,7 +216,7 @@ export default async function DashboardPage() {
             </h2>
             <Link
               href="/applications"
-              className="text-xs font-medium text-primary hover:underline"
+              className="text-xs font-medium text-accent hover:underline"
             >
               View all
             </Link>
