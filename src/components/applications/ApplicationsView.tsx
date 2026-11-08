@@ -3,8 +3,9 @@
 import { useState } from "react"
 import Link from "next/link"
 import dynamic from "next/dynamic"
-import { cn } from "@/lib/utils"
 import { Briefcase } from "lucide-react"
+import { EmptyState } from "@/components/EmptyState"
+import { Button } from "@/components/ui/button"
 
 import { StatusBadge } from "@/components/ui/badge"
 import type { ApplicationListItem } from "@/types/database"
@@ -29,28 +30,17 @@ export function ApplicationsView({
       {/* View toggle + actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => setView("kanban")}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-              view === "kanban"
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted-fg hover:text-foreground hover:bg-muted"
-            )}
-          >
-            Kanban
-          </button>
-          <button
-            onClick={() => setView("list")}
-            className={cn(
-              "px-3 py-1.5 rounded-lg text-sm font-medium transition-colors cursor-pointer",
-              view === "list"
-                ? "bg-white/[0.08] text-foreground"
-                : "text-muted-fg hover:text-foreground hover:bg-muted"
-            )}
-          >
-            List
-          </button>
+          {(["kanban", "list"] as const).map((v) => (
+            <Button
+              key={v}
+              variant={view === v ? "secondary" : "ghost"}
+              aria-pressed={view === v}
+              onClick={() => setView(v)}
+              className="capitalize"
+            >
+              {v}
+            </Button>
+          ))}
         </div>
       </div>
 
@@ -66,23 +56,16 @@ export function ApplicationsView({
 function ListView({ applications }: { applications: ApplicationListItem[] }) {
   if (applications.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-        <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-          <Briefcase className="w-6 h-6 text-muted-fg" />
-        </div>
-        <h3 className="text-sm font-semibold text-foreground">
-          No applications yet
-        </h3>
-        <p className="text-sm text-muted-fg mt-1 max-w-xs">
-          Start by adding your first job application.
-        </p>
-        <Link
-          href="/applications/new"
-          className="mt-4 px-4 py-2 rounded-lg bg-white/[0.08] text-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          Add Application
-        </Link>
-      </div>
+      <EmptyState
+        icon={Briefcase}
+        title="No applications yet"
+        description="Start by adding your first job application."
+        action={
+          <Button asChild>
+            <Link href="/applications/new">Add Application</Link>
+          </Button>
+        }
+      />
     )
   }
 

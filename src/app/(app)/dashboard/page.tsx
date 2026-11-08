@@ -1,36 +1,14 @@
 import Link from "next/link"
 import { createClient } from "@/lib/supabase/server"
+import { Briefcase } from "lucide-react"
 import { StatusBadge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/EmptyState"
+import { StatCard } from "@/components/StatCard"
 import type {
   ApplicationStatsRow,
   UpcomingInterview,
 } from "@/types/database"
-
-function StatCard({
-  label,
-  value,
-  sub,
-  color,
-}: {
-  label: string
-  value: string | number
-  sub?: string
-  color?: string
-}) {
-  return (
-    <div className="bg-card rounded-xl p-4 sm:p-5 shadow-card border border-border flex flex-col gap-1 animate-fade-in">
-      <span className="text-xs font-medium text-muted-fg uppercase tracking-wide">
-        {label}
-      </span>
-      <span
-        className={`text-3xl font-bold tabular-nums ${color ?? "text-foreground"}`}
-      >
-        {value}
-      </span>
-      {sub && <span className="text-xs text-muted-fg">{sub}</span>}
-    </div>
-  )
-}
 
 const SOURCE_LABELS: Record<string, string> = {
   linkedin: "LinkedIn",
@@ -43,6 +21,7 @@ const SOURCE_LABELS: Record<string, string> = {
 
 export default async function DashboardPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
 
   const nowIso = new Date().toISOString()
 
@@ -50,10 +29,12 @@ export default async function DashboardPage() {
     supabase
       .from("applications")
       .select("id, company, role, status, source")
+      .eq("user_id", user!.id)
       .order("created_at", { ascending: false }),
     supabase
       .from("applications")
       .select("id, company, role, interview_date")
+      .eq("user_id", user!.id)
       .gt("interview_date", nowIso)
       .order("interview_date", { ascending: true })
       .limit(5),
@@ -99,54 +80,137 @@ export default async function DashboardPage() {
             Your job search at a glance
           </p>
         </div>
-        <Link
-          href="/applications"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors self-start sm:self-auto shrink-0"
-        >
-          View board →
-        </Link>
+        <Button asChild variant="outline" size="lg" className="self-start sm:self-auto">
+          <Link href="/applications">View board →</Link>
+        </Button>
       </div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <StatCard
-          label="Total Applications"
-          value={total}
-          sub="all time"
+      {total === 0 ? (
+        <EmptyState
+          icon={Briefcase}
+          title="No applications yet"
+          description="Add your first application to see your stats, interviews and sources here."
+          action={
+            <Button asChild>
+              <Link href="/applications/new">Add Application</Link>
+            </Button>
+          }
         />
-        <StatCard
-          label="Response Rate"
-          value={`${responseRate}%`}
-          sub="applied → response"
-          color="text-primary"
-        />
-        <StatCard
-          label="Interviews"
-          value={interviews}
-          sub="active"
-          color="text-orange-600"
-        />
-        <StatCard
-          label="Offers"
-          value={offers}
-          sub="active"
-          color="text-accent"
-        />
-      </div>
+      ) : (
+        <>
+        {/* Stats grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+          <StatCard
+            label="Total Applications"
+            value={total}
+            hint="all time"
+          />
+          <StatCard
+            label="Response Rate"
+            value={`${responseRate}%`}
+            hint="applied → response"
+          />
+          <StatCard
+            label="Interviews"
+            value={interviews}
+            hint="active"
+          />
+          <StatCard
+            label="Offers"
+            value={offers}
+            hint="active"
+          />
+        </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upcoming interviews */}
-        <section>
-          <h2 className="text-sm font-semibold text-foreground mb-3">
-            Upcoming Interviews
-          </h2>
-          <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
-            {upcomingInterviews.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-muted-fg">
-                No upcoming interviews
-              </div>
-            ) : (
-              upcomingInterviews.map((app) => (
+        <div className="grid lg:grid-cols-2 gap-6">
+          {/* Upcoming interviews */}
+          <section>
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Upcoming Interviews
+            </h2>
+            <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
+              {upcomingInterviews.length === 0 ? (
+                <div className="px-4 py-8 text-center text-sm text-muted-fg">
+                  No upcoming interviews
+                </div>
+              ) : (
+                upcomingInterviews.map((app) => (
+                  <Link
+                    key={app.id}
+                    href={`/applications/${app.id}`}
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-foreground">
+                        {app.role}
+                      </p>
+                      <p className="text-xs text-muted-fg">{app.company}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs font-medium text-orange-600">
+                        {new Date(app.interview_date!).toLocaleDateString()}
+                      </p>
+                      <p className="text-xs text-muted-fg">
+                        {new Date(app.interview_date!).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              )}
+            </div>
+          </section>
+
+          {/* Source breakdown */}
+          <section>
+            <h2 className="text-sm font-semibold text-foreground mb-3">
+              Source Breakdown
+            </h2>
+            <div className="bg-card rounded-xl border border-border shadow-card p-4 flex flex-col gap-3">
+              {sourceEntries.length === 0 ? (
+                <div className="py-4 text-center text-sm text-muted-fg">
+                  Add applications to see source data
+                </div>
+              ) : (
+                sourceEntries.map(([src, count]) => (
+                  <div key={src} className="flex flex-col gap-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-medium text-foreground">
+                        {SOURCE_LABELS[src] ?? src}
+                      </span>
+                      <span className="text-muted-fg tabular-nums">{count}</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all duration-500"
+                        style={{ width: `${(count / maxSource) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        </div>
+
+        {/* Recent applications */}
+        {apps.length > 0 && (
+          <section>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold text-foreground">
+                Recent Applications
+              </h2>
+              <Link
+                href="/applications"
+                className="text-xs font-medium text-accent hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+            <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
+              {apps.slice(0, 5).map((app) => (
                 <Link
                   key={app.id}
                   href={`/applications/${app.id}`}
@@ -158,87 +222,13 @@ export default async function DashboardPage() {
                     </p>
                     <p className="text-xs text-muted-fg">{app.company}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs font-medium text-orange-600">
-                      {new Date(app.interview_date!).toLocaleDateString()}
-                    </p>
-                    <p className="text-xs text-muted-fg">
-                      {new Date(app.interview_date!).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </p>
-                  </div>
+                  <StatusBadge status={app.status} />
                 </Link>
-              ))
-            )}
-          </div>
-        </section>
-
-        {/* Source breakdown */}
-        <section>
-          <h2 className="text-sm font-semibold text-foreground mb-3">
-            Source Breakdown
-          </h2>
-          <div className="bg-card rounded-xl border border-border shadow-card p-4 flex flex-col gap-3">
-            {sourceEntries.length === 0 ? (
-              <div className="py-4 text-center text-sm text-muted-fg">
-                Add applications to see source data
-              </div>
-            ) : (
-              sourceEntries.map(([src, count]) => (
-                <div key={src} className="flex flex-col gap-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-medium text-foreground">
-                      {SOURCE_LABELS[src] ?? src}
-                    </span>
-                    <span className="text-muted-fg tabular-nums">{count}</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${(count / maxSource) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </section>
-      </div>
-
-      {/* Recent applications */}
-      {apps.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold text-foreground">
-              Recent Applications
-            </h2>
-            <Link
-              href="/applications"
-              className="text-xs font-medium text-accent hover:underline"
-            >
-              View all
-            </Link>
-          </div>
-          <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
-            {apps.slice(0, 5).map((app) => (
-              <Link
-                key={app.id}
-                href={`/applications/${app.id}`}
-                className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors"
-              >
-                <div>
-                  <p className="text-sm font-medium text-foreground">
-                    {app.role}
-                  </p>
-                  <p className="text-xs text-muted-fg">{app.company}</p>
-                </div>
-                <StatusBadge status={app.status} />
-              </Link>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
+        )}
+        </>
       )}
     </div>
   )

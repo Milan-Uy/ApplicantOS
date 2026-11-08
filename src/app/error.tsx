@@ -2,13 +2,14 @@
 
 import { useEffect } from "react"
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function RootError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string }
-  reset: () => void
+  unstable_retry: () => void
 }) {
   useEffect(() => {
     console.error(error)
@@ -31,18 +32,10 @@ export default function RootError({
           </p>
         )}
         <div className="flex gap-2">
-          <button
-            onClick={reset}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
-          >
-            Try again
-          </button>
-          <Link
-            href="/"
-            className="px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-          >
-            Go home
-          </Link>
+          <Button onClick={() => unstable_retry()}>Try again</Button>
+          <Button asChild variant="outline">
+            <Link href="/">Go home</Link>
+          </Button>
         </div>
       </div>
     </div>

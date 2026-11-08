@@ -3,14 +3,17 @@ import { Plus } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import type { ApplicationListItem } from "@/types/database"
 import { ApplicationsView } from "@/components/applications/ApplicationsView"
+import { Button } from "@/components/ui/button"
 
 export default async function ApplicationsPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
   const { data: applications } = await supabase
     .from("applications")
     .select(
-      "id, company, role, status, source, salary_min, salary_max, interview_date, applied_at, updated_at"
+      "id, company, role, status, source, salary_min, salary_max, salary_currency, salary_period, interview_date, applied_at, updated_at"
     )
+    .eq("user_id", user!.id)
     .order("updated_at", { ascending: false })
 
   return (
@@ -23,13 +26,12 @@ export default async function ApplicationsPage() {
             {(applications?.length ?? 0)} total applications
           </p>
         </div>
-        <Link
-          href="/applications/new"
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-primary text-primary-fg text-sm font-semibold hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Add Application
-        </Link>
+        <Button asChild size="lg">
+          <Link href="/applications/new">
+            <Plus />
+            Add Application
+          </Link>
+        </Button>
       </div>
 
       <ApplicationsView

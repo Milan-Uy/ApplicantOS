@@ -5,6 +5,8 @@ import { createClient } from "@/lib/supabase/server"
 import { StatusBadge } from "@/components/ui/badge"
 import { DeleteApplicationButton } from "@/components/applications/DeleteApplicationButton"
 import { cn } from "@/lib/utils"
+import { formatSalary } from "@/lib/format"
+import { Button } from "@/components/ui/button"
 
 export default async function ApplicationDetailPage({
   params,
@@ -51,24 +53,15 @@ export default async function ApplicationDetailPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto sm:shrink-0">
-          <Link
-            href={`/applications/${id}/edit`}
-            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-          >
-            Edit
-          </Link>
-          <Link
-            href={`/applications/${id}/resume`}
-            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors"
-          >
-            Optimize Resume
-          </Link>
-          <Link
-            href={`/applications/${id}/cover-letter`}
-            className="flex-1 sm:flex-none text-center px-4 py-2 rounded-lg bg-accent text-accent-fg text-sm font-semibold hover:bg-accent/90 transition-colors"
-          >
-            Cover Letter
-          </Link>
+          <Button asChild variant="outline" size="lg" className="flex-1 sm:flex-none">
+            <Link href={`/applications/${id}/edit`}>Edit</Link>
+          </Button>
+          <Button asChild variant="outline" size="lg" className="flex-1 sm:flex-none">
+            <Link href={`/applications/${id}/resume`}>Optimize Resume</Link>
+          </Button>
+          <Button asChild size="lg" className="flex-1 sm:flex-none">
+            <Link href={`/applications/${id}/cover-letter`}>Cover Letter</Link>
+          </Button>
         </div>
       </div>
 
@@ -101,7 +94,7 @@ export default async function ApplicationDetailPage({
               href={application.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-sm text-primary hover:underline"
+              className="text-sm text-accent hover:underline"
             >
               View Job Posting
             </a>
@@ -115,20 +108,7 @@ export default async function ApplicationDetailPage({
             <DetailRow label="Location" value={application.location ?? "—"} />
             <DetailRow
               label="Salary"
-              value={
-                application.salary_min
-                  ? [
-                      application.salary_currency,
-                      application.salary_min.toLocaleString() +
-                        (application.salary_max
-                          ? `–${application.salary_max.toLocaleString()}`
-                          : "+"),
-                      application.salary_period === "hourly" ? "/hr" : application.salary_period === "monthly" ? "/mo" : null,
-                    ]
-                      .filter(Boolean)
-                      .join(" ")
-                  : "—"
-              }
+              value={formatSalary(application) ?? "—"}
             />
             <DetailRow
               label="Applied"

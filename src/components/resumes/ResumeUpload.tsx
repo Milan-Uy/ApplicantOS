@@ -3,6 +3,7 @@
 import { useCallback, useRef, useState } from "react"
 import { Upload, Loader2, FileText } from "lucide-react"
 import { saveDocument } from "@/app/(app)/resumes/actions"
+import { toast } from "sonner"
 
 const MAX_SIZE = 10 * 1024 * 1024 // 10MB
 const ACCEPTED_TYPES = [
@@ -98,8 +99,13 @@ export function ResumeUpload() {
     formData.set("filename", filename)
     formData.set("s3Key", s3Key)
     formData.set("extractedText", extractedText)
-    await saveDocument(formData)
-    reset()
+    try {
+      await saveDocument(formData)
+      toast.success("Resume saved")
+      reset()
+    } catch {
+      toast.error("Couldn't save the resume. Please try again.")
+    }
   }
 
   const inputClasses =
