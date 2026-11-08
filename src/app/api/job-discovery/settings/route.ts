@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
+import { verifyBearer } from "@/lib/verify-bearer"
+import { logError } from "@/lib/log"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,10 +10,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  const expected = Buffer.from(`Bearer ${process.env.N8N_WEBHOOK_SECRET}`)
-  const actual = Buffer.from(authHeader ?? "")
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+  if (!verifyBearer(request, process.env.N8N_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -28,7 +26,7 @@ export async function GET(request: NextRequest) {
     .single()
 
   if (error && error.code !== "PGRST116") {
-    console.error("Settings query error:", error)
+    logError("api.job-discovery.settings", error, { userId })
     return NextResponse.json({ error: "Query failed" }, { status: 500 })
   }
 

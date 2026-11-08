@@ -22,9 +22,10 @@ Next.js 16 (App Router) · React 19 · TypeScript (strict, `@/*` → `src/*`) ·
 npm run dev     # Dev server on localhost:3000
 npm run build   # Production build — run before declaring a change done
 npm run lint    # ESLint — currently clean; keep it that way
+npm test        # Playwright e2e (own dev server on :3100; resets the E2E_EMAIL user's data)
 ```
 
-No test suite exists yet.
+`e2e/` holds the Playwright suite. It runs against the real Supabase project as the `E2E_EMAIL` user (never `DEMO_EMAIL`) and writes screenshots to `screenshots/current/` (`SHOTS=before` for a named set). Mock AI calls with `page.route`; specs that mutate data call `resetForSpec()` in `beforeAll`.
 
 **Shell:** quote paths containing `(app)`, `(auth)` or `[id]` — e.g. `cat "src/app/(app)/applications/[id]/page.tsx"` — or the shell treats them as subshells/globs.
 
@@ -45,6 +46,9 @@ RESEND_API_KEY=
 N8N_WEBHOOK_SECRET=
 CRON_SECRET=
 NEXT_PUBLIC_APP_URL=
+DEMO_EMAIL=      # live demo account, reset by the demo cron
+E2E_EMAIL=       # test-only account, must differ from DEMO_EMAIL
+E2E_PASSWORD=
 ```
 
 ## Layout

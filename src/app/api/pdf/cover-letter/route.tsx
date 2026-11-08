@@ -8,6 +8,7 @@ import { randomUUID } from "crypto"
 import { createClient } from "@/lib/supabase/server"
 import { s3 } from "@/lib/s3"
 import { CoverLetterPDF } from "@/lib/pdf/cover-letter-template"
+import { logError } from "@/lib/log"
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -78,7 +79,10 @@ export async function POST(request: NextRequest) {
     })
 
     if (insertError) {
-      console.error("Document insert error:", insertError)
+      logError("api.pdf.cover-letter.document-insert", insertError, {
+        userId: user.id,
+        applicationId,
+      })
       return NextResponse.json({ error: "Failed to save document record" }, { status: 500 })
     }
 
@@ -95,7 +99,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ downloadUrl })
   } catch (error) {
-    console.error("PDF generation error:", error)
+    logError("api.pdf.cover-letter.generate", error, {
+      userId: user.id,
+      applicationId,
+    })
     return NextResponse.json(
       { error: "Failed to generate PDF" },
       { status: 500 }

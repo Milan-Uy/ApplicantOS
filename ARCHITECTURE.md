@@ -72,6 +72,7 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **`/applications/[id]/resume`** — [page.tsx](src/app/(app)/applications/[id]/resume/page.tsx) + [client.tsx](src/app/(app)/applications/[id]/resume/client.tsx) — AI resume optimization UI.
 - **`/applications/[id]/cover-letter`** — [page.tsx](src/app/(app)/applications/[id]/cover-letter/page.tsx) + [client.tsx](src/app/(app)/applications/[id]/cover-letter/client.tsx) — AI cover letter generation with PDF export.
 - **`/resumes`** — [page.tsx](src/app/(app)/resumes/page.tsx) — upload widget + grid of `ResumeCard`s.
+- **`/job-discovery`** — [page.tsx](src/app/(app)/job-discovery/page.tsx) + [client.tsx](src/app/(app)/job-discovery/client.tsx) — toggle auto-discovery on/off and edit keywords; [actions.ts](src/app/(app)/job-discovery/actions.ts) upserts the user's `job_discovery_settings` row (session-auth, not the n8n secret).
 - **`/settings`** — [page.tsx](src/app/(app)/settings/page.tsx) — profile display + sign-out.
 
 ### API (`src/app/api/`)
@@ -82,10 +83,12 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **`POST /api/pdf/cover-letter`** — [route.tsx](src/app/api/pdf/cover-letter/route.tsx) — `@react-pdf/renderer` → S3 upload → creates a `documents` row → presigned GET (1h) for download.
 - **`GET /api/view-resume`** — [route.ts](src/app/api/view-resume/route.ts) — returns a 5-min presigned GET URL for a document; auth + `.eq("user_id", user.id)` ownership guard. Used by ResumeCard PDF modal.
 - **`GET /api/cron/interview-reminder`** — [route.ts](src/app/api/cron/interview-reminder/route.ts) — cron endpoint protected by `CRON_SECRET` using `crypto.timingSafeEqual`.
+- **`GET /api/job-discovery/settings`** — [route.ts](src/app/api/job-discovery/settings/route.ts) — n8n reads a user's `{ enabled, keywords }` before scraping; `Bearer ${N8N_WEBHOOK_SECRET}` via `timingSafeEqual`, service-role client, `?user_id=` query param.
+- **`POST /api/webhooks/n8n/job-discovery`** — [route.ts](src/app/api/webhooks/n8n/job-discovery/route.ts) — n8n posts a discovered job; same secret auth, validates `user_id` via `auth.admin.getUserById`, dedupes by `url` per user, inserts `{ status: "wishlist", source: "online_jobs_ph", auto_discovered: true }`.
 
 ### Middleware
 - [src/middleware.ts](src/middleware.ts) → delegates to [src/lib/supabase/middleware.ts](src/lib/supabase/middleware.ts).
-- Public allowlist: `/`, `/login`, `/signup`, `/auth/*`, `/api/cron/*`.
+- Public allowlist: `/`, `/login`, `/signup`, `/auth/*`, **and** `/api/cron/*`, `/api/webhooks/*`, `/api/job-discovery/*` (the last three skip session auth because they authenticate via `CRON_SECRET` / `N8N_WEBHOOK_SECRET` instead).
 - Unauth → `/login`; authed hitting `/`, `/login`, `/signup` → `/dashboard`.
 - Refreshes Supabase auth cookies on every request.
 
@@ -97,10 +100,11 @@ Defined in [src/types/database.ts](src/types/database.ts). All tables have RLS `
 
 | Table | Purpose | Key columns |
 |---|---|---|
-| **applications** | Core tracking record | `id`, `user_id`, `company` (optional), `role`, `url`, `status`, `source`, `salary_min/max`, `salary_currency`, `salary_period`, `location`, `job_description`, `notes`, `contact_name/email`, `resume_id`, `interview_date`, `applied_at`, `follow_up_at`, `reminder_sent`, `created_at`, `updated_at` |
+| **applications** | Core tracking record | `id`, `user_id`, `company` (optional), `role`, `url`, `status`, `source`, `salary_min/max`, `salary_currency`, `salary_period`, `location`, `job_description`, `notes`, `contact_name/email`, `resume_id`, `interview_date`, `applied_at`, `follow_up_at`, `reminder_sent`, `auto_discovered`, `created_at`, `updated_at` |
 | **documents** | Resume + cover-letter files | `id`, `user_id`, `application_id?`, `type` (`resume`\|`cover_letter`), `label?`, `filename`, `s3_key`, `extracted_text?` |
 | **ai_results** | Cached AI outputs (JSONB) | `id`, `application_id`, `type` (`resume_optimize`\|`cover_letter`), `result`, `created_at` |
-| **notifications** | In-app reminders (Phase 3) | `id`, `user_id`, `application_id?`, `type` (`follow_up`\|`digest`\|`system`), `title`, `body?`, `read` |
+| **notifications** | In-app reminders — table + webhook-insert target, no UI route yet | `id`, `user_id`, `application_id?`, `type` (`follow_up`\|`digest`\|`system`), `title`, `body?`, `read` |
+| **job_discovery_settings** | Per-user n8n auto-discovery config | `id`, `user_id`, `enabled`, `keywords[]`, `last_run_at`, `last_run_status`, `created_at`, `updated_at` |
 
 ### Enums
 - **ApplicationStatus**: `wishlist` \| `applied` \| `phone_screen` \| `interview` \| `offer` \| `rejected`
@@ -249,8 +253,34 @@ supabaseAdmin (service role, persistSession:false)
 
 Email template is a React Email component with inline styles. `from: ApplicantOS <onboarding@resend.dev>` (Resend's sandbox sender — swap for a verified domain in production).
 
-### Deferred (Phase 3)
-- `N8N_WEBHOOK_SECRET` exists in env but is not yet consumed — the CLAUDE.md roadmap places n8n-driven follow-up reminders and weekly digests in Phase 3.
+### n8n job discovery — [webhooks/n8n/job-discovery/route.ts](src/app/api/webhooks/n8n/job-discovery/route.ts) + [job-discovery/settings/route.ts](src/app/api/job-discovery/settings/route.ts)
+
+```txt
+n8n workflow (external)
+   │  1. GET /api/job-discovery/settings?user_id=
+   │     Authorization: Bearer {N8N_WEBHOOK_SECRET}
+   ▼
+timingSafeEqual(actual, expected)  ← constant-time
+   │  ← { enabled, keywords }   (from job_discovery_settings; defaults {false, []})
+   │
+   │  2. n8n scrapes job boards using keywords (off-platform)
+   │
+   │  3. POST /api/webhooks/n8n/job-discovery  (same Bearer secret)
+   │     { user_id, role, url, company?, job_description? }
+   ▼
+supabaseAdmin (service role, persistSession:false)
+   ├─ auth.admin.getUserById(user_id)        → 400 if unknown
+   ├─ dedupe: applications WHERE user_id + url  → { inserted:false } if exists
+   └─ INSERT { status:"wishlist", source:"online_jobs_ph", auto_discovered:true }
+   │
+   ▼
+{ inserted: true }
+```
+
+Both routes are in the middleware public allowlist (§3) and rely solely on the `N8N_WEBHOOK_SECRET` bearer check — no Supabase session. The human-facing `/job-discovery` page (§3, session-auth) is what writes the `job_discovery_settings` row that step 1 reads.
+
+### Deferred
+- Weekly digest emails — `notifications` table exists and n8n can insert, but there is no digest cron or in-app notification UI yet.
 
 ---
 
@@ -285,7 +315,7 @@ Summarized from patterns observed across routes:
 | `RESEND_API_KEY` | server | [src/lib/resend.ts](src/lib/resend.ts) |
 | `CRON_SECRET` | server | interview cron |
 | `NEXT_PUBLIC_APP_URL` | public | OAuth callback URLs + email links |
-| `N8N_WEBHOOK_SECRET` | server | defined, not yet used |
+| `N8N_WEBHOOK_SECRET` | server | job-discovery webhook + settings routes (bearer auth) |
 
 ---
 
@@ -332,7 +362,8 @@ Summarized from patterns observed across routes:
 
 - **Token metering / per-user quotas** — no tracking of Gemini spend per user beyond the 10 req/min cap.
 - **Email beyond interview reminders** — no welcome, follow-up, or status-change mails yet.
-- **n8n integration** — env var declared, no code paths.
+- **In-app notification center** — `notifications` table exists and is an insert target, but there is no `(app)/notifications/` route or UI to surface them.
+- **n8n weekly digest** — job-discovery webhook is live; the digest/follow-up side is not built.
 - **Cover letter PDF route** — lint errors are known and deliberately ignored per CLAUDE.md.
 - **Real-time updates** — Supabase realtime is not used.
 
@@ -364,4 +395,6 @@ Since this document is a map rather than a change, verification = make sure the 
 
 **Feature components**: [KanbanBoard.tsx](src/components/applications/KanbanBoard.tsx) · [ApplicationsView.tsx](src/components/applications/ApplicationsView.tsx) · [ResumeUpload.tsx](src/components/resumes/ResumeUpload.tsx) · [ResumeCard.tsx](src/components/resumes/ResumeCard.tsx)
 
-**API routes**: [upload](src/app/api/upload/route.ts) · [parse-resume](src/app/api/parse-resume/route.ts) · [view-resume](src/app/api/view-resume/route.ts) · [ai/resume-optimize](src/app/api/ai/resume-optimize/route.ts) · [ai/cover-letter](src/app/api/ai/cover-letter/route.ts) · [pdf/cover-letter](src/app/api/pdf/cover-letter/route.tsx) · [cron/interview-reminder](src/app/api/cron/interview-reminder/route.ts)
+**API routes**: [upload](src/app/api/upload/route.ts) · [parse-resume](src/app/api/parse-resume/route.ts) · [view-resume](src/app/api/view-resume/route.ts) · [ai/resume-optimize](src/app/api/ai/resume-optimize/route.ts) · [ai/cover-letter](src/app/api/ai/cover-letter/route.ts) · [pdf/cover-letter](src/app/api/pdf/cover-letter/route.tsx) · [cron/interview-reminder](src/app/api/cron/interview-reminder/route.ts) · [job-discovery/settings](src/app/api/job-discovery/settings/route.ts) · [webhooks/n8n/job-discovery](src/app/api/webhooks/n8n/job-discovery/route.ts)
+
+**Job discovery**: [(app)/job-discovery/page.tsx](src/app/(app)/job-discovery/page.tsx) · [client.tsx](src/app/(app)/job-discovery/client.tsx) · [actions.ts](src/app/(app)/job-discovery/actions.ts)

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { timingSafeEqual } from "crypto"
 import { createClient } from "@supabase/supabase-js"
+import { verifyBearer } from "@/lib/verify-bearer"
+import { logError } from "@/lib/log"
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,10 +10,7 @@ const supabaseAdmin = createClient(
 )
 
 export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  const expected = Buffer.from(`Bearer ${process.env.N8N_WEBHOOK_SECRET}`)
-  const actual = Buffer.from(authHeader ?? "")
-  if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
+  if (!verifyBearer(request, process.env.N8N_WEBHOOK_SECRET)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -59,7 +57,7 @@ export async function POST(request: NextRequest) {
   })
 
   if (error) {
-    console.error("Webhook insert error:", error)
+    logError("api.webhooks.n8n.job-discovery", error, { userId: user_id, url })
     return NextResponse.json({ error: "Insert failed" }, { status: 500 })
   }
 

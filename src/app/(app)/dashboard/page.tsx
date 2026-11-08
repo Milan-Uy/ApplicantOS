@@ -37,6 +37,7 @@ const SOURCE_LABELS: Record<string, string> = {
   indeed: "Indeed",
   referral: "Referral",
   company_site: "Company Site",
+  online_jobs_ph: "OnlineJobs.ph",
   other: "Other",
 }
 

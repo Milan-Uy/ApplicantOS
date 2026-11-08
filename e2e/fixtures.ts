@@ -1,0 +1,36 @@
+import { test as base } from "@playwright/test"
+import { createClient } from "@supabase/supabase-js"
+import { findUserId, resetDemoUser } from "@/lib/demo/reset"
+import { SEED_HERO_APP } from "@/lib/demo/seed-data"
+
+export const E2E_EMAIL = process.env.E2E_EMAIL!
+export const E2E_PASSWORD = process.env.E2E_PASSWORD!
+
+export function admin() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
+  })
+}
+
+export function resetForSpec() {
+  return resetDemoUser(admin(), E2E_EMAIL, { password: E2E_PASSWORD })
+}
+
+// Resolved per test, never at config load: every reset gives the seed rows new ids.
+export const test = base.extend<{ heroAppId: string }>({
+  heroAppId: async ({}, provide) => {
+    const userId = await findUserId(admin(), E2E_EMAIL)
+    if (!userId) throw new Error("e2e user not found; run a reset")
+    const { data, error } = await admin()
+      .from("applications")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("company", SEED_HERO_APP.company)
+      .eq("role", SEED_HERO_APP.role)
+      .single()
+    if (error) throw error
+    await provide(data.id)
+  },
+})
+
+export { expect } from "@playwright/test"
