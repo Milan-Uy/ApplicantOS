@@ -163,3 +163,37 @@ export async function deleteApplication(id: string) {
   // No redirect: the caller toasts, then navigates.
   revalidatePath("/applications")
 }
+
+export async function setApplicationResume(
+  applicationId: string,
+  resumeId: string
+): Promise<{ error?: string }> {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) return { error: "Unauthorized" }
+
+  const { data: doc } = await supabase
+    .from("documents")
+    .select("id")
+    .eq("id", resumeId)
+    .eq("user_id", user.id)
+    .eq("type", "resume")
+    .maybeSingle()
+  if (!doc) return { error: "Resume not found" }
+
+  const { data, error } = await supabase
+    .from("applications")
+    .update({ resume_id: resumeId, updated_at: new Date().toISOString() })
+    .eq("id", applicationId)
+    .eq("user_id", user.id)
+    .select("id")
+  if (error) return { error: error.message }
+  if (!data.length) return { error: "Application not found" }
+
+  revalidatePath(`/applications/${applicationId}`)
+  revalidatePath(`/applications/${applicationId}/resume`)
+  revalidatePath(`/applications/${applicationId}/cover-letter`)
+  return {}
+}

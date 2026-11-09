@@ -26,16 +26,14 @@ export default async function CoverLetterPage({
 
   if (!application) redirect("/applications")
 
-  // Get linked resume text
-  let resumeText: string | null = null
-  if (application.resume_id) {
-    const { data: doc } = await supabase
-      .from("documents")
-      .select("extracted_text")
-      .eq("id", application.resume_id)
-      .single()
-    resumeText = doc?.extracted_text ?? null
-  }
+  // Linked resume's text comes from this list, so the picker and the AI input always agree.
+  const { data: resumes } = await supabase
+    .from("documents")
+    .select("id, label, filename, extracted_text")
+    .eq("user_id", user.id)
+    .eq("type", "resume")
+    .order("created_at", { ascending: false })
+  const resumeText = resumes?.find((r) => r.id === application.resume_id)?.extracted_text ?? null
 
   // Get latest AI result
   const { data: aiResult } = await supabase
@@ -58,6 +56,8 @@ export default async function CoverLetterPage({
       role={application.role}
       jobDescription={application.job_description}
       resumeText={resumeText}
+      currentResumeId={application.resume_id}
+      resumes={(resumes ?? []).map(({ id, label, filename }) => ({ id, label, filename }))}
       existingResult={existingResult}
     />
   )

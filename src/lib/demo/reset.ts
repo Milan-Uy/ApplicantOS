@@ -159,6 +159,10 @@ export async function resetDemoUser(
     await must(admin.from("applications").insert(appRows))
     if (failAt === "inserts") throw new Error("failAt: inserts")
     await must(admin.from("documents").insert(docRows))
+    // Linked after both inserts so the AI pages open ready to run.
+    await must(
+      admin.from("applications").update({ resume_id: docRows[0].id }).eq("id", hero.id).eq("user_id", userId)
+    )
     await must(admin.from("ai_results").insert(aiRows))
     await must(
       admin

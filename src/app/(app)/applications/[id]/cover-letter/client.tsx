@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useTransition } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import type { CoverLetterResult } from "@/types/database"
-import { cn } from "@/lib/utils"
+import { readTextStream } from "@/lib/read-text-stream"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { ResumePicker } from "@/components/applications/ResumePicker"
+import { saveCoverLetter } from "./actions"
 
 interface Props {
   applicationId: string
@@ -11,8 +17,12 @@ interface Props {
   role: string
   jobDescription: string | null
   resumeText: string | null
+  currentResumeId: string | null
+  resumes: { id: string; label: string | null; filename: string }[]
   existingResult: CoverLetterResult | null
 }
+
+const card = "bg-card rounded-xl border border-border shadow-card p-5"
 
 export function CoverLetterClient({
   applicationId,
@@ -20,25 +30,30 @@ export function CoverLetterClient({
   role,
   jobDescription,
   resumeText,
+  currentResumeId,
+  resumes,
   existingResult,
 }: Props) {
   const [tone, setTone] = useState<"formal" | "conversational">("formal")
   const [whyThisRole, setWhyThisRole] = useState("")
-  const [coverLetter, setCoverLetter] = useState(existingResult?.coverLetter ?? "")
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  // `saved` mirrors what the server holds, so Save enables only for unsaved edits.
+  const [saved, setSaved] = useState(existingResult?.coverLetter ?? "")
+  const [coverLetter, setCoverLetter] = useState(saved)
+  const [streaming, setStreaming] = useState(false)
+  const [saving, startSaving] = useTransition()
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
   const [downloadError, setDownloadError] = useState<string | null>(null)
 
   const canGenerate = !!jobDescription && !!resumeText
+  const dirty = !streaming && coverLetter !== saved
 
   async function handleGenerate() {
     if (!canGenerate) return
-    setLoading(true)
-    setError(null)
+    setStreaming(true)
     setDownloadError(null)
 
+    let started = false
     try {
       const res = await fetch("/api/ai/cover-letter", {
         method: "POST",
@@ -53,17 +68,38 @@ export function CoverLetterClient({
       })
 
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         throw new Error(data.error || "Failed to generate")
       }
 
-      const data: CoverLetterResult = await res.json()
-      setCoverLetter(data.coverLetter)
+      started = true
+      setCoverLetter("")
+      // The server persists a letter only when the stream completes, so a full read means it's saved.
+      setSaved(await readTextStream(res, setCoverLetter))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      toast.error(
+        started
+          ? "Generation was interrupted. The partial letter is kept but not saved."
+          : err instanceof Error
+            ? err.message
+            : "Something went wrong"
+      )
     } finally {
-      setLoading(false)
+      setStreaming(false)
     }
+  }
+
+  function handleSave() {
+    const text = coverLetter
+    startSaving(async () => {
+      const { error } = await saveCoverLetter(applicationId, text)
+      if (error) {
+        toast.error(error)
+        return
+      }
+      setSaved(text)
+      toast.success("Cover letter saved")
+    })
   }
 
   async function handleCopy() {
@@ -112,120 +148,105 @@ export function CoverLetterClient({
         >
           &larr; Back to {company} &mdash; {role}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Cover Letter Generator</h1>
-        <p className="text-muted-fg text-sm mt-1">
-          AI-generated cover letter tailored to this role
-        </p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Cover Letter Generator</h1>
+            <p className="text-muted-fg text-sm mt-1">
+              AI-generated cover letter tailored to this role
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ResumePicker applicationId={applicationId} currentResumeId={currentResumeId} resumes={resumes} disabled={streaming} />
+            <Link href={`/applications/${applicationId}/edit`} className="text-sm text-accent hover:underline">
+              Edit application
+            </Link>
+          </div>
+        </div>
       </div>
 
       {!canGenerate && (
-        <div className="bg-card rounded-xl border border-border shadow-card p-5">
+        <div className={card}>
           <p className="text-muted-fg">
             {!jobDescription && !resumeText
-              ? "Add a job description and link a resume to this application to generate a cover letter."
+              ? "Add a job description and choose a resume above to generate a cover letter."
               : !jobDescription
                 ? "Add a job description to this application to generate a cover letter."
-                : "Link a resume to this application to generate a cover letter."}
+                : "Choose a resume above to generate a cover letter."}
           </p>
-          <Link
-            href={`/applications/${applicationId}`}
-            className="mt-3 inline-block text-sm text-accent hover:underline"
-          >
-            Edit application &rarr;
-          </Link>
         </div>
       )}
 
       {canGenerate && (
         <div className="space-y-4">
           {/* Tone selector */}
-          <div className="bg-card rounded-xl border border-border shadow-card p-5">
-            <label className="text-sm font-medium text-muted-fg block mb-3">
+          <div className={card}>
+            <p id="tone-label" className="text-sm font-medium text-muted-fg mb-3">
               Tone
-            </label>
-            <div className="flex gap-2">
+            </p>
+            <div role="group" aria-labelledby="tone-label" className="flex gap-2">
               {(["formal", "conversational"] as const).map((t) => (
-                <button
+                <Button
                   key={t}
+                  variant={tone === t ? "default" : "secondary"}
+                  aria-pressed={tone === t}
                   onClick={() => setTone(t)}
-                  className={cn(
-                    "px-4 py-2 rounded-lg text-sm font-medium transition-colors",
-                    tone === t
-                      ? "bg-accent text-accent-fg"
-                      : "bg-muted text-muted-fg hover:text-foreground"
-                  )}
                 >
                   {t === "formal" ? "Formal" : "Conversational"}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
 
           {/* Why this role */}
-          <div className="bg-card rounded-xl border border-border shadow-card p-5">
-            <label
-              htmlFor="why-this-role"
-              className="text-sm font-medium text-muted-fg block mb-2"
-            >
+          <div className={card}>
+            <Label htmlFor="why-this-role" className="text-muted-fg mb-2">
               Why this role? (optional)
-            </label>
-            <textarea
+            </Label>
+            <Textarea
               id="why-this-role"
               value={whyThisRole}
               onChange={(e) => setWhyThisRole(e.target.value)}
               placeholder="What excites you about this role or company?"
               rows={3}
-              className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm placeholder:text-muted-fg focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none"
+              className="resize-none"
             />
           </div>
 
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleGenerate}
-              disabled={loading}
-              className="px-5 py-2.5 rounded-lg bg-accent text-accent-fg text-sm font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading
-                ? "Generating..."
-                : coverLetter
-                  ? "Regenerate"
-                  : "Generate Cover Letter"}
-            </button>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-          </div>
+          {/* Not while saving: the save overwrites the latest row, which a new generation would be. */}
+          <Button onClick={handleGenerate} disabled={streaming || saving}>
+            {streaming ? "Generating…" : coverLetter ? "Regenerate" : "Generate Cover Letter"}
+          </Button>
         </div>
       )}
 
-      {coverLetter && (
-        <div className="bg-card rounded-xl border border-border shadow-card p-5">
-          <div className="flex items-center justify-between mb-3">
+      {(coverLetter || streaming) && (
+        <div className={card}>
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
             <h2 className="text-sm font-medium text-muted-fg">
               Generated Cover Letter
             </h2>
             <div className="flex items-center gap-2">
-              <button
-                onClick={handleDownload}
-                disabled={downloading}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-fg hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
+              <Button size="sm" onClick={handleSave} disabled={!dirty || saving}>
+                {saving ? "Saving…" : "Save"}
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleDownload} disabled={downloading || streaming}>
                 {downloading ? "Generating PDF..." : "Download PDF"}
-              </button>
-              <button
-                onClick={handleCopy}
-                className="px-3 py-1.5 rounded-md text-xs font-medium bg-muted text-muted-fg hover:text-foreground transition-colors"
-              >
+              </Button>
+              <Button variant="secondary" size="sm" onClick={handleCopy} disabled={streaming}>
                 {copied ? "Copied!" : "Copy"}
-              </button>
+              </Button>
             </div>
           </div>
           {downloadError && (
             <p className="text-xs text-destructive mb-2">{downloadError}</p>
           )}
-          <textarea
+          <Textarea
+            aria-label="Cover letter"
             value={coverLetter}
             onChange={(e) => setCoverLetter(e.target.value)}
+            readOnly={streaming}
             rows={10}
-            className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/50 resize-y"
+            className="leading-relaxed resize-y"
           />
         </div>
       )}

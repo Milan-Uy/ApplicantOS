@@ -1,9 +1,16 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
+import { toast } from "sonner"
 import type { ResumeOptimizeResult } from "@/types/database"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Skeleton } from "@/components/ui/skeleton"
+import { ResumePicker } from "@/components/applications/ResumePicker"
+
+const STAGES = ["Reading the job description", "Matching keywords", "Rewriting bullet points"]
+const STAGE_MS = 2000
 
 interface Props {
   applicationId: string
@@ -11,7 +18,20 @@ interface Props {
   role: string
   jobDescription: string | null
   resumeText: string | null
+  currentResumeId: string | null
+  resumes: { id: string; label: string | null; filename: string }[]
   existingResult: ResumeOptimizeResult | null
+}
+
+const card = "bg-card rounded-xl border border-border shadow-card p-5"
+
+async function copy(text: string) {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast.success("Copied to clipboard")
+  } catch {
+    toast.error("Couldn't copy to the clipboard")
+  }
 }
 
 export function ResumeOptimizerClient({
@@ -20,18 +40,27 @@ export function ResumeOptimizerClient({
   role,
   jobDescription,
   resumeText,
+  currentResumeId,
+  resumes,
   existingResult,
 }: Props) {
   const [result, setResult] = useState<ResumeOptimizeResult | null>(existingResult)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [stage, setStage] = useState(0)
+
+  // Advance through the stages, then hold the last one until the response lands.
+  useEffect(() => {
+    if (!loading) return
+    const timers = STAGES.slice(1).map((_, i) => setTimeout(() => setStage(i + 1), (i + 1) * STAGE_MS))
+    return () => timers.forEach(clearTimeout)
+  }, [loading])
 
   const canOptimize = !!jobDescription && !!resumeText
 
   async function handleOptimize() {
     if (!canOptimize) return
+    setStage(0)
     setLoading(true)
-    setError(null)
 
     try {
       const res = await fetch("/api/ai/resume-optimize", {
@@ -45,14 +74,14 @@ export function ResumeOptimizerClient({
       })
 
       if (!res.ok) {
-        const data = await res.json()
+        const data = await res.json().catch(() => ({}))
         throw new Error(data.error || "Failed to optimize")
       }
 
       const data: ResumeOptimizeResult = await res.json()
       setResult(data)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong")
+      toast.error(err instanceof Error ? err.message : "Something went wrong")
     } finally {
       setLoading(false)
     }
@@ -81,51 +110,64 @@ export function ResumeOptimizerClient({
         >
           &larr; Back to {company} &mdash; {role}
         </Link>
-        <h1 className="mt-2 text-2xl font-bold">Resume Optimizer</h1>
-        <p className="text-muted-fg text-sm mt-1">
-          AI-powered analysis of your resume against the job description
-        </p>
+        <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-bold">Resume Optimizer</h1>
+            <p className="text-muted-fg text-sm mt-1">
+              AI-powered analysis of your resume against the job description
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <ResumePicker applicationId={applicationId} currentResumeId={currentResumeId} resumes={resumes} disabled={loading} />
+            <Link href={`/applications/${applicationId}/edit`} className="text-sm text-accent hover:underline">
+              Edit application
+            </Link>
+          </div>
+        </div>
       </div>
 
       {!canOptimize && (
-        <div className="bg-card rounded-xl border border-border shadow-card p-5">
+        <div className={card}>
           <p className="text-muted-fg">
             {!jobDescription && !resumeText
-              ? "Add a job description and link a resume to this application to use the optimizer."
+              ? "Add a job description and choose a resume above to use the optimizer."
               : !jobDescription
                 ? "Add a job description to this application to use the optimizer."
-                : "Link a resume to this application to use the optimizer."}
+                : "Choose a resume above to use the optimizer."}
           </p>
-          <Link
-            href={`/applications/${applicationId}`}
-            className="mt-3 inline-block text-sm text-accent hover:underline"
-          >
-            Edit application &rarr;
-          </Link>
         </div>
       )}
 
       {canOptimize && (
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleOptimize}
-            disabled={loading}
-            className="px-5 py-2.5 rounded-lg bg-accent text-accent-fg text-sm font-semibold hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading
-              ? "Analyzing..."
-              : result
-                ? "Re-analyze"
-                : "Optimize Resume"}
-          </button>
-          {error && <p className="text-sm text-destructive">{error}</p>}
+        <Button onClick={handleOptimize} disabled={loading}>
+          {loading ? "Analyzing…" : result ? "Re-analyze" : "Optimize Resume"}
+        </Button>
+      )}
+
+      {loading && (
+        <div className="space-y-6">
+          <p role="status" aria-live="polite" className="text-sm text-muted-fg">
+            {STAGES[stage]}…
+          </p>
+          <div className={cn(card, "space-y-3")}>
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-12 w-28" />
+            <Skeleton className="h-2.5 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+          <div className={cn(card, "space-y-4")}>
+            <Skeleton className="h-4 w-32" />
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-20 w-full" />
+            ))}
+          </div>
         </div>
       )}
 
-      {result && (
+      {result && !loading && (
         <div className="space-y-6">
           {/* Match Score */}
-          <div className="bg-card rounded-xl border border-border shadow-card p-5">
+          <div className={card}>
             <h2 className="text-sm font-medium text-muted-fg mb-3">
               Match Score
             </h2>
@@ -146,7 +188,7 @@ export function ResumeOptimizerClient({
 
           {/* Missing Keywords */}
           {result.missingKeywords.length > 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-card p-5">
+            <div className={card}>
               <h2 className="text-sm font-medium text-muted-fg mb-3">
                 Missing Keywords
               </h2>
@@ -165,10 +207,17 @@ export function ResumeOptimizerClient({
 
           {/* Suggestions */}
           {result.suggestions.length > 0 && (
-            <div className="bg-card rounded-xl border border-border shadow-card p-5">
-              <h2 className="text-sm font-medium text-muted-fg mb-4">
-                Suggested Rewrites
-              </h2>
+            <div className={card}>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h2 className="text-sm font-medium text-muted-fg">Suggested Rewrites</h2>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => copy(result.suggestions.map((s) => s.rewritten).join("\n\n"))}
+                >
+                  Copy all rewrites
+                </Button>
+              </div>
               <div className="space-y-4">
                 {result.suggestions.map((s, i) => (
                   <div
@@ -178,7 +227,17 @@ export function ResumeOptimizerClient({
                     <p className="text-sm text-muted-fg line-through">
                       {s.original}
                     </p>
-                    <p className="text-sm font-medium">{s.rewritten}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium">{s.rewritten}</p>
+                      <Button
+                        variant="ghost"
+                        size="xs"
+                        aria-label={`Copy rewrite ${i + 1}`}
+                        onClick={() => copy(s.rewritten)}
+                      >
+                        Copy
+                      </Button>
+                    </div>
                     <p className="text-xs text-muted-fg">{s.reason}</p>
                   </div>
                 ))}
