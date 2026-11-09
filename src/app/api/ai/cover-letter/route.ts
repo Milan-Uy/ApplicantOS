@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/lib/supabase/server"
-import { generateCoverLetter } from "@/lib/ai/cover-letter"
+import { streamCoverLetter } from "@/lib/ai/cover-letter"
+import { textStreamOrAbort } from "@/lib/ai/text-stream"
 import { checkRateLimit } from "@/lib/rate-limit"
 import { logError } from "@/lib/log"
 
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   const MAX = 50 * 1024
-  if (resumeText.length > MAX || jobDescription.length > MAX) {
+  if (resumeText.length > MAX || jobDescription.length > MAX || (whyThisRole?.length ?? 0) > MAX) {
     return NextResponse.json({ error: "Input too large" }, { status: 400 })
   }
 
@@ -54,26 +55,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Application not found" }, { status: 404 })
   }
 
-  try {
-    const result = await generateCoverLetter({
-      jobDescription,
-      resumeText,
-      whyThisRole,
-      tone,
-    })
+  const result = streamCoverLetter({
+    jobDescription,
+    resumeText,
+    whyThisRole,
+    tone,
+    onError: ({ error }) => logError("api.ai.cover-letter", error, { userId: user.id, applicationId }),
+    // Only a complete letter is persisted; a cut-off or filtered stream leaves the saved one in place.
+    onFinish: async ({ text, finishReason }) => {
+      if (finishReason !== "stop") return
+      const { error } = await supabase.from("ai_results").insert({
+        application_id: applicationId,
+        type: "cover_letter",
+        result: { coverLetter: text },
+      })
+      if (error) logError("api.ai.cover-letter.persist", error, { userId: user.id, applicationId })
+    },
+  })
 
-    await supabase.from("ai_results").insert({
-      application_id: applicationId,
-      type: "cover_letter",
-      result,
-    })
-
-    return NextResponse.json(result)
-  } catch (error) {
-    logError("api.ai.cover-letter", error, { userId: user.id, applicationId })
-    return NextResponse.json(
-      { error: "Failed to generate cover letter" },
-      { status: 500 }
-    )
-  }
+  return new Response(textStreamOrAbort(result.fullStream), {
+    headers: { "content-type": "text/plain; charset=utf-8" },
+  })
 }
