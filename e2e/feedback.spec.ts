@@ -53,6 +53,22 @@ test("edit lands on the record with no error", async ({ page, heroAppId }) => {
   await expect(errorToast(page)).toHaveCount(0)
 })
 
+test("free text equal to the select sentinel is saved, not dropped", async ({ page, heroAppId }) => {
+  await open(page, `/applications/${heroAppId}/edit`)
+  await page.getByLabel("Notes").fill("none")
+  await page.getByRole("button", { name: "Save Changes" }).click()
+  await expect(page).toHaveURL(new RegExp(`/applications/${heroAppId}$`), { timeout: 30_000 })
+  await expect(page.getByRole("main").getByText("none", { exact: true })).toBeVisible()
+})
+
+// Before hydration the form would submit as a native GET: nothing saved, typed values in the URL.
+// Only the app chunks are blocked; the inline streaming scripts still reveal the page.
+test("the form can't be submitted before the client bundle runs", async ({ page }) => {
+  await page.route("**/_next/static/chunks/**", (route) => route.abort())
+  await page.goto("/applications/new")
+  await expect(page.getByRole("button", { name: "Save Application" })).toBeDisabled()
+})
+
 test("server-side validation error toasts and keeps the form", async ({ page }) => {
   await open(page, "/applications/new")
   await page.getByLabel("Role *").fill("Range Check")

@@ -1,6 +1,6 @@
 "use client"
 
-import { useTransition } from "react"
+import { useSyncExternalStore, useTransition } from "react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { createApplication, updateApplication } from "@/app/(app)/applications/actions"
@@ -13,6 +13,11 @@ import type { Application } from "@/types/database"
 
 // Radix SelectItem can't carry "", so optional selects use this and it is dropped before submit.
 const NONE = "none"
+const OPTIONAL_SELECTS = ["source", "resume_id", "salary_currency", "salary_period"]
+
+// false during SSR and before hydration, true once React runs in the browser.
+const subscribeNoop = () => () => {}
+const useHydrated = () => useSyncExternalStore(subscribeNoop, () => true, () => false)
 
 const STATUSES = [
   { value: "wishlist", label: "Wishlist" },
@@ -96,12 +101,14 @@ export function ApplicationForm({
   resumes: { id: string; label: string | null; filename: string }[]
 }) {
   const [pending, startTransition] = useTransition()
+  // Before hydration onSubmit isn't attached, so a submit would be a native GET that saves nothing.
+  const hydrated = useHydrated()
 
   // onSubmit, not the form `action` prop: React resets uncontrolled fields after an action, losing input on error.
   const onSubmit = (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    for (const [key, value] of [...formData]) if (value === NONE) formData.delete(key)
+    for (const key of OPTIONAL_SELECTS) if (formData.get(key) === NONE) formData.delete(key)
     startTransition(async () => {
       try {
         const result =
@@ -195,7 +202,7 @@ export function ApplicationForm({
       </Field>
 
       <div className="flex gap-3 pt-4">
-        <Button type="submit" size="lg" disabled={pending}>
+        <Button type="submit" size="lg" disabled={pending || !hydrated}>
           {pending ? "Saving…" : mode === "create" ? "Save Application" : "Save Changes"}
         </Button>
         <Button asChild variant="outline" size="lg">
