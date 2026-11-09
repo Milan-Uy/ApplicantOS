@@ -356,3 +356,5 @@ expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 ## Review log
 
 - Review diff r1 2026-11-08, Codex (Task 1, ui/1-test-harness): revise; 3 fixed, 0 rejected, 0 deferred. Session 01a1bb7f-adc8-76f2-970b-7bdab9282123.
+- Review did not run 2026-11-09 (Tasks 2+3, diff 44af363..4f20af2, after merge): Codex usage limit hit mid-review, resets 3:11 AM. Session 01a1bc05-c723-7a22-81ca-f6faa3c9bd04.
+- Review diff r1 2026-11-09, Codex gpt-6.1-sol (Tasks 2+3, 44af363..4f20af2, after merge): revise; 2 fixed, 0 rejected, 1 deferred. Session 01a1beca-3d3a-7fd3-806c-29f9436aae2d.
