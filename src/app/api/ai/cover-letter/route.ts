@@ -67,19 +67,22 @@ export async function POST(request: Request) {
     whyThisRole,
     tone,
     onError: ({ error }) => logError("api.ai.cover-letter", error, { userId: user.id, applicationId }),
-    // Only a complete letter is persisted; a cut-off or filtered stream leaves the saved one in place.
-    onFinish: async ({ text, finishReason }) => {
-      if (finishReason !== "stop") return
-      const { error } = await supabase.from("ai_results").insert({
-        application_id: applicationId,
-        type: "cover_letter",
-        result: { coverLetter: text },
-      })
-      if (error) logError("api.ai.cover-letter.persist", error, { userId: user.id, applicationId })
-    },
   })
 
-  return new Response(textStreamOrAbort(result.fullStream), {
+  // Persisted inside the stream: a failed insert errors the body, and a cancelled body saves nothing.
+  const body = textStreamOrAbort(result.fullStream, async (text) => {
+    const { error } = await supabase.from("ai_results").insert({
+      application_id: applicationId,
+      type: "cover_letter",
+      result: { coverLetter: text },
+    })
+    if (error) {
+      logError("api.ai.cover-letter.persist", error, { userId: user.id, applicationId })
+      throw new Error("Failed to save the cover letter")
+    }
+  })
+
+  return new Response(body, {
     headers: { "content-type": "text/plain; charset=utf-8" },
   })
 }

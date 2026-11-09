@@ -51,22 +51,52 @@ test("finish with stop ends the body normally", async () => {
   expect(finishReason()).toBe("stop")
 })
 
-// The client treats a fully read body as saved, so the route's async insert must finish before close.
-test("the body closes only after an async onFinish settles", async () => {
-  let persisted = false
+const stopParts = [...head, { type: "text-delta", id: "t", delta: "Team" }, { type: "text-end", id: "t" }, finish("stop")] as LanguageModelV3StreamPart[]
+
+function stream(parts: LanguageModelV3StreamPart[] | ReadableStream<LanguageModelV3StreamPart>) {
   const model = new MockLanguageModelV3({
-    doStream: async () => ({
-      stream: convertArrayToReadableStream<LanguageModelV3StreamPart>([...head, { type: "text-end", id: "t" }, finish("stop")]),
-    }),
+    doStream: async () => ({ stream: Array.isArray(parts) ? convertArrayToReadableStream(parts) : parts }),
   })
-  const result = streamText({
-    model,
-    prompt: "x",
-    onFinish: async () => {
-      await new Promise((r) => setTimeout(r, 300))
-      persisted = true
+  return streamText({ model, prompt: "x", maxRetries: 0 }).fullStream
+}
+
+// The client treats a fully read body as saved, so the save must finish before the body closes.
+test("onComplete gets the full text and settles before the body closes", async () => {
+  let saved: string | undefined
+  const body = textStreamOrAbort(stream(stopParts), async (text) => {
+    await new Promise((r) => setTimeout(r, 300))
+    saved = text
+  })
+  expect(await new Response(body).text()).toBe("Dear Hiring Team")
+  expect(saved).toBe("Dear Hiring Team")
+})
+
+test("a failing onComplete aborts the body", async () => {
+  const body = textStreamOrAbort(stream(stopParts), async () => {
+    throw new Error("insert failed")
+  })
+  await expect(new Response(body).text()).rejects.toThrow()
+})
+
+test("a cancelled body never calls onComplete, even if the model finishes", async () => {
+  let release!: () => void
+  const gate = new Promise<void>((r) => (release = r))
+  const model = new ReadableStream<LanguageModelV3StreamPart>({
+    async start(c) {
+      for (const p of [...head, { type: "text-delta", id: "t", delta: "Team" }] as LanguageModelV3StreamPart[]) c.enqueue(p)
+      await gate
+      c.enqueue({ type: "text-end", id: "t" })
+      c.enqueue(finish("stop"))
+      c.close()
     },
   })
-  await new Response(textStreamOrAbort(result.fullStream)).text()
-  expect(persisted).toBe(true)
+  let completed = false
+  const reader = textStreamOrAbort(stream(model), async () => void (completed = true)).getReader()
+  await reader.read()
+  // Let the remaining text buffer first, so only text-end and finish arrive after the cancel.
+  await new Promise((r) => setTimeout(r, 200))
+  await reader.cancel()
+  release()
+  await new Promise((r) => setTimeout(r, 300))
+  expect(completed).toBe(false)
 })

@@ -361,3 +361,4 @@ expect(isOwnedKey(`resumes/${other}/x/a.pdf`, uid, "resumes")).toBe(false)
 - Review diff r2 2026-11-09, Codex gpt-6.1-sol (Task 4, ui/4-storage @ 614d599): approve; 1 fixed (minor: PDF dialog close now restores focus to View PDF), 0 rejected, 0 deferred. Session 01a1beca-06bb-78b1-bc4a-c782bbf140f2.
 - Review did not run 2026-11-09 (Tasks 2+3, diff 44af363..4f20af2, after merge): Codex usage limit hit mid-review, resets 3:11 AM. Session 01a1bc05-c723-7a22-81ca-f6faa3c9bd04.
 - Review diff r1 2026-11-09, Codex gpt-6.1-sol (Tasks 2+3, 44af363..4f20af2, after merge): revise; 2 fixed, 0 rejected, 1 deferred. Session 01a1beca-3d3a-7fd3-806c-29f9436aae2d.
+- Review diff r1 2026-11-09, Codex gpt-6.1-sol (Task 5, ui/5-demo-flow @ 46bed82): revise; 3 fixed (save failure looked saved; cancelled stream still persisted; Save/Regenerate race), 0 rejected, 0 deferred. Session 01a1bf0a-1682-7f03-b7fa-0e7026cba9a5.

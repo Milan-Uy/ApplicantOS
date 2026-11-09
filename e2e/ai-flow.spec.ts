@@ -154,3 +154,21 @@ test("cover-letter route rejects non-string inputs that would dodge the size cap
   })
   expect(res.status()).toBe(400)
 })
+
+test("regenerate is disabled while a save is in flight", async ({ page, heroAppId }) => {
+  await linkResume(heroAppId)
+  await open(page, `/applications/${heroAppId}/cover-letter`)
+  // Hold the save action so a regenerate can't land between its lookup and its update.
+  let release!: () => void
+  const held = new Promise<void>((r) => (release = r))
+  await page.route(`**/applications/${heroAppId}/cover-letter`, async (route) => {
+    if (route.request().method() === "POST" && route.request().headers()["next-action"]) await held
+    await route.continue()
+  })
+  await editor(page).fill(`Edited ${Date.now()}`)
+  await page.getByRole("button", { name: "Save", exact: true }).click()
+  await expect(page.getByRole("button", { name: "Regenerate" })).toBeDisabled()
+  release()
+  await expect(toast(page, "success")).toContainText("Cover letter saved")
+  await expect(page.getByRole("button", { name: "Regenerate" })).toBeEnabled()
+})

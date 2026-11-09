@@ -1,5 +1,5 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
-import { streamText, type StreamTextOnErrorCallback, type StreamTextOnFinishCallback, type ToolSet } from "ai"
+import { streamText, type StreamTextOnErrorCallback } from "ai"
 import { COVER_LETTER_PROMPT } from "./prompts/cover-letter"
 
 const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY })
@@ -10,10 +10,9 @@ export function streamCoverLetter(params: {
   resumeText: string
   whyThisRole?: string
   tone?: "formal" | "conversational"
-  onFinish?: StreamTextOnFinishCallback<ToolSet>
   onError?: StreamTextOnErrorCallback
 }) {
-  const { jobDescription, resumeText, whyThisRole, tone = "formal", onFinish, onError } = params
+  const { jobDescription, resumeText, whyThisRole, tone = "formal", onError } = params
 
   let prompt = `## Job Description\n${jobDescription}\n\n## Resume\n${resumeText}\n\n## Tone\n${tone}`
 
@@ -26,7 +25,6 @@ export function streamCoverLetter(params: {
     system: COVER_LETTER_PROMPT,
     prompt,
     maxRetries: 3,
-    onFinish,
     onError,
   })
 }

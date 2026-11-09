@@ -212,7 +212,8 @@ export function CoverLetterClient({
             />
           </div>
 
-          <Button onClick={handleGenerate} disabled={streaming}>
+          {/* Not while saving: the save overwrites the latest row, which a new generation would be. */}
+          <Button onClick={handleGenerate} disabled={streaming || saving}>
             {streaming ? "Generating…" : coverLetter ? "Regenerate" : "Generate Cover Letter"}
           </Button>
         </div>
