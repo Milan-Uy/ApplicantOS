@@ -3,7 +3,7 @@
 import { FileText, Trash2 } from "lucide-react"
 import type { Document } from "@/types/database"
 import { deleteDocument } from "@/app/(app)/resumes/actions"
-import { useState } from "react"
+import { useRef, useState } from "react"
 import { toast } from "sonner"
 import { ConfirmDelete } from "@/components/ConfirmDelete"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -16,6 +16,7 @@ export function ResumeCard({ document }: ResumeCardProps) {
   const [showText, setShowText] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loadingPdf, setLoadingPdf] = useState(false)
+  const viewPdfRef = useRef<HTMLButtonElement>(null)
 
   const isPdf = document.filename.toLowerCase().endsWith(".pdf")
 
@@ -71,6 +72,7 @@ export function ResumeCard({ document }: ResumeCardProps) {
             )}
             {isPdf && (
               <button
+                ref={viewPdfRef}
                 onClick={handleOpenPdf}
                 disabled={loadingPdf}
                 className="text-xs text-accent hover:underline disabled:opacity-50"
@@ -105,6 +107,11 @@ export function ResumeCard({ document }: ResumeCardProps) {
       <Dialog open={!!pdfUrl} onOpenChange={(open) => !open && setPdfUrl(null)}>
         <DialogContent
           aria-describedby={undefined}
+          // The opener isn't a DialogTrigger (it fetches first), so Radix can't restore focus itself.
+          onCloseAutoFocus={(e) => {
+            e.preventDefault()
+            viewPdfRef.current?.focus()
+          }}
           className="flex h-[90vh] flex-col gap-0 p-0 sm:max-w-5xl"
         >
           <DialogTitle className="truncate border-b border-border px-4 py-3 pr-12 text-sm">

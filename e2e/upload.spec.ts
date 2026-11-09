@@ -78,6 +78,7 @@ test("a missing file shows File unavailable, not a broken viewer", async ({ page
   await expect(page.getByRole("dialog").locator("iframe")).toHaveAttribute("src", new RegExp(`^${signedUrlPrefix}`))
   await page.getByRole("dialog").getByRole("button", { name: "Close" }).click()
   await expect(page.getByRole("dialog")).toBeHidden()
+  await expect(view).toBeFocused()
 
   await admin().storage.from(BUCKET).remove([doc.s3_key])
   const response = page.waitForResponse((r) => r.url().includes("/api/view-resume"))
