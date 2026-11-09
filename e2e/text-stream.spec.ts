@@ -50,3 +50,23 @@ test("finish with stop ends the body normally", async () => {
   expect(await res.text()).toBe("Dear Hiring Team")
   expect(finishReason()).toBe("stop")
 })
+
+// The client treats a fully read body as saved, so the route's async insert must finish before close.
+test("the body closes only after an async onFinish settles", async () => {
+  let persisted = false
+  const model = new MockLanguageModelV3({
+    doStream: async () => ({
+      stream: convertArrayToReadableStream<LanguageModelV3StreamPart>([...head, { type: "text-end", id: "t" }, finish("stop")]),
+    }),
+  })
+  const result = streamText({
+    model,
+    prompt: "x",
+    onFinish: async () => {
+      await new Promise((r) => setTimeout(r, 300))
+      persisted = true
+    },
+  })
+  await new Response(textStreamOrAbort(result.fullStream)).text()
+  expect(persisted).toBe(true)
+})

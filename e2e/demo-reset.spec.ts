@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test"
 import { createClient } from "@supabase/supabase-js"
 import { listAllKeys, resetDemoUser } from "@/lib/demo/reset"
 import { BUCKET } from "@/lib/storage-keys"
-import { SEED_APPLICATIONS, SEED_RESUMES } from "@/lib/demo/seed-data"
+import { SEED_APPLICATIONS, SEED_HERO_APP, SEED_RESUMES } from "@/lib/demo/seed-data"
 import { admin, E2E_EMAIL, E2E_PASSWORD, resetForSpec } from "./fixtures"
 
 let e2eId: string
@@ -54,6 +54,16 @@ test("seeds every status, resumes with files, AI results, discovered jobs", asyn
   const { data: docs } = await admin().from("documents").select("s3_key").eq("user_id", userId)
   expect(docs!.length).toBe(SEED_RESUMES.length)
   for (const d of docs!) expect(keys).toContain(d.s3_key) // every row points at a real file, no leftovers
+  // The demo opens the AI tools ready to run: the hero is linked to the first seeded resume.
+  const { data: hero } = await admin()
+    .from("applications")
+    .select("resume_id")
+    .eq("user_id", userId)
+    .eq("company", SEED_HERO_APP.company)
+    .eq("role", SEED_HERO_APP.role)
+    .single()
+  const { data: linked } = await admin().from("documents").select("label").eq("id", hero!.resume_id ?? "").maybeSingle()
+  expect(linked?.label).toBe(SEED_RESUMES[0].label)
 })
 
 test("is idempotent and leaves other users untouched", async () => {

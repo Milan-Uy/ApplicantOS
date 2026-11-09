@@ -25,7 +25,7 @@ async function resumeId(label: string) {
   return data.id as string
 }
 
-// The seed leaves the hero unlinked; the AI tools need a resume to run.
+// Each test sets its own resume link, so order doesn't matter (the picker test changes it).
 async function linkResume(appId: string, label = "Frontend focus") {
   const { error } = await admin().from("applications").update({ resume_id: await resumeId(label) }).eq("id", appId)
   if (error) throw error
@@ -146,4 +146,11 @@ test("edit link goes to edit", async ({ page, heroAppId }) => {
       `/applications/${heroAppId}/edit`
     )
   }
+})
+
+test("cover-letter route rejects non-string inputs that would dodge the size cap", async ({ page, heroAppId }) => {
+  const res = await page.request.post("/api/ai/cover-letter", {
+    data: { applicationId: heroAppId, jobDescription: "JD", resumeText: ["x".repeat(60 * 1024)] },
+  })
+  expect(res.status()).toBe(400)
 })
