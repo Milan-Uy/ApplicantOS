@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache"
 import { createClient } from "@/lib/supabase/server"
+import { isDemoUser } from "@/lib/demo/is-demo"
 
 export async function updateProfile(formData: FormData) {
   const supabase = await createClient()
@@ -11,6 +12,10 @@ export async function updateProfile(formData: FormData) {
 
   if (!user) {
     return { error: "Unauthorized" }
+  }
+  // Shared account: a visitor must not be able to rename it or move it to their own email.
+  if (isDemoUser(user)) {
+    return { error: "Profile changes are disabled for the demo account" }
   }
 
   const fullName = ((formData.get("full_name") as string) ?? "").trim()

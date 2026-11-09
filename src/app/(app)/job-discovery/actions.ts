@@ -17,19 +17,6 @@ export async function saveKeywords(keywords: string[]) {
   revalidatePath("/job-discovery")
 }
 
-export async function toggleEnabled(enabled: boolean) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) throw new Error("Unauthorized")
-
-  const { error } = await supabase.from("job_discovery_settings").upsert(
-    { user_id: user.id, enabled, updated_at: new Date().toISOString() },
-    { onConflict: "user_id" }
-  )
-  if (error) throw new Error(error.message)
-  revalidatePath("/job-discovery")
-}
-
 export async function dismissJob(id: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -41,6 +28,7 @@ export async function dismissJob(id: string) {
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("auto_discovered", true)
+    .eq("status", "wishlist") // never delete an application the user has started on
   if (error) throw new Error(error.message)
   revalidatePath("/job-discovery")
 }
