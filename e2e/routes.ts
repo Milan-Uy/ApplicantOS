@@ -26,4 +26,5 @@ export const AXE_ROUTES: string[] = [
   "resumes",
   "application-resume",
   "application-cover-letter",
+  "job-discovery",
 ]

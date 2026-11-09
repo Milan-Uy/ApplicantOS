@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Briefcase } from "lucide-react"
 import { StatusBadge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { EmptyState } from "@/components/EmptyState"
 import { StatCard } from "@/components/StatCard"
 import type {
@@ -128,7 +129,7 @@ export default async function DashboardPage() {
             <h2 className="text-sm font-semibold text-foreground mb-3">
               Upcoming Interviews
             </h2>
-            <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
+            <Card className="gap-0 py-0 divide-y divide-border">
               {upcomingInterviews.length === 0 ? (
                 <div className="px-4 py-8 text-center text-sm text-muted-fg">
                   No upcoming interviews
@@ -160,7 +161,7 @@ export default async function DashboardPage() {
                   </Link>
                 ))
               )}
-            </div>
+            </Card>
           </section>
 
           {/* Source breakdown */}
@@ -168,7 +169,7 @@ export default async function DashboardPage() {
             <h2 className="text-sm font-semibold text-foreground mb-3">
               Source Breakdown
             </h2>
-            <div className="bg-card rounded-xl border border-border shadow-card p-4 flex flex-col gap-3">
+            <Card className="px-4 gap-3">
               {sourceEntries.length === 0 ? (
                 <div className="py-4 text-center text-sm text-muted-fg">
                   Add applications to see source data
@@ -191,7 +192,7 @@ export default async function DashboardPage() {
                   </div>
                 ))
               )}
-            </div>
+            </Card>
           </section>
         </div>
 
@@ -209,7 +210,7 @@ export default async function DashboardPage() {
                 View all
               </Link>
             </div>
-            <div className="bg-card rounded-xl border border-border shadow-card divide-y divide-border">
+            <Card className="gap-0 py-0 divide-y divide-border">
               {apps.slice(0, 5).map((app) => (
                 <Link
                   key={app.id}
@@ -225,7 +226,7 @@ export default async function DashboardPage() {
                   <StatusBadge status={app.status} />
                 </Link>
               ))}
-            </div>
+            </Card>
           </section>
         )}
         </>

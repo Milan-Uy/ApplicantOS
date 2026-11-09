@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server"
 import { signOut } from "@/app/(auth)/actions"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ProfileForm } from "./profile-form"
 
 export default async function SettingsPage() {
@@ -20,24 +22,27 @@ export default async function SettingsPage() {
         </p>
       </div>
 
-      {/* Profile */}
-      <section className="bg-card rounded-xl border border-border shadow-card p-5 flex flex-col gap-4">
-        <h2 className="text-sm font-semibold text-foreground">Profile</h2>
-        <ProfileForm defaultName={name} defaultEmail={email} />
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">Profile</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ProfileForm defaultName={name} defaultEmail={email} />
+        </CardContent>
+      </Card>
 
-      {/* Sign out */}
-      <section className="bg-card rounded-xl border border-border shadow-card p-5">
-        <h2 className="text-sm font-semibold text-foreground mb-3">Account</h2>
-        <form action={signOut}>
-          <button
-            type="submit"
-            className="px-4 py-2 rounded-lg border border-destructive/30 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-          >
-            Sign out
-          </button>
-        </form>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-semibold">Account</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form action={signOut}>
+            <Button type="submit" variant="destructive">
+              Sign out
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
     </div>
   )
 }

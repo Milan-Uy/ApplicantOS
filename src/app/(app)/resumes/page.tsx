@@ -1,13 +1,20 @@
+import { redirect } from "next/navigation"
+import { FileText } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import { EmptyState } from "@/components/EmptyState"
 import type { Document } from "@/types/database"
 import { ResumeUpload } from "@/components/resumes/ResumeUpload"
 import { ResumeCard } from "@/components/resumes/ResumeCard"
 
 export default async function ResumesPage() {
   const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) redirect("/login")
+
   const { data: documents } = await supabase
     .from("documents")
     .select("*")
+    .eq("user_id", user.id)
     .eq("type", "resume")
     .order("created_at", { ascending: false })
 
@@ -24,7 +31,13 @@ export default async function ResumesPage() {
 
       <ResumeUpload />
 
-      {resumes.length > 0 && (
+      {resumes.length === 0 ? (
+        <EmptyState
+          icon={FileText}
+          title="No resumes yet"
+          description="Upload a PDF or DOCX above. The AI tools use its text to tailor each application."
+        />
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {resumes.map((resume) => (
             <ResumeCard key={resume.id} document={resume} />
