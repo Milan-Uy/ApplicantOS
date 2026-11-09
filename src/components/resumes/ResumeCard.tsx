@@ -1,10 +1,12 @@
 "use client"
 
-import { FileText, Trash2, X } from "lucide-react"
+import { FileText, Trash2 } from "lucide-react"
 import type { Document } from "@/types/database"
 import { deleteDocument } from "@/app/(app)/resumes/actions"
-import { useState, useEffect } from "react"
+import { useRef, useState } from "react"
+import { toast } from "sonner"
 import { ConfirmDelete } from "@/components/ConfirmDelete"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 
 interface ResumeCardProps {
   document: Document
@@ -12,30 +14,25 @@ interface ResumeCardProps {
 
 export function ResumeCard({ document }: ResumeCardProps) {
   const [showText, setShowText] = useState(false)
-  const [pdfOpen, setPdfOpen] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [loadingPdf, setLoadingPdf] = useState(false)
+  const viewPdfRef = useRef<HTMLButtonElement>(null)
 
   const isPdf = document.filename.toLowerCase().endsWith(".pdf")
 
-  useEffect(() => {
-    if (!pdfOpen) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setPdfOpen(false) }
-    window.addEventListener("keydown", onKey)
-    return () => window.removeEventListener("keydown", onKey)
-  }, [pdfOpen])
-
+  // Fetched on every open: signed URLs expire after 5 minutes.
   const handleOpenPdf = async () => {
-    if (pdfUrl) {
-      setPdfOpen(true)
-      return
-    }
     setLoadingPdf(true)
     try {
       const res = await fetch(`/api/view-resume?documentId=${document.id}`)
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.url) {
+        toast.error(data.error ?? "File unavailable")
+        return
+      }
       setPdfUrl(data.url)
-      setPdfOpen(true)
+    } catch {
+      toast.error("Couldn't load the PDF. Please try again.")
     } finally {
       setLoadingPdf(false)
     }
@@ -68,16 +65,17 @@ export function ResumeCard({ document }: ResumeCardProps) {
             {document.extracted_text && (
               <button
                 onClick={() => setShowText(v => !v)}
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-accent hover:underline"
               >
                 {showText ? "Hide text" : "View text"}
               </button>
             )}
             {isPdf && (
               <button
+                ref={viewPdfRef}
                 onClick={handleOpenPdf}
                 disabled={loadingPdf}
-                className="text-xs text-primary hover:underline disabled:opacity-50"
+                className="text-xs text-accent hover:underline disabled:opacity-50"
               >
                 {loadingPdf ? "Loading…" : "View PDF"}
               </button>
@@ -106,34 +104,28 @@ export function ResumeCard({ document }: ResumeCardProps) {
         )}
       </div>
 
-      {pdfOpen && pdfUrl && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
-          onClick={() => setPdfOpen(false)}
+      <Dialog open={!!pdfUrl} onOpenChange={(open) => !open && setPdfUrl(null)}>
+        <DialogContent
+          aria-describedby={undefined}
+          // The opener isn't a DialogTrigger (it fetches first), so Radix can't restore focus itself.
+          onCloseAutoFocus={(e) => {
+            e.preventDefault()
+            viewPdfRef.current?.focus()
+          }}
+          className="flex h-[90vh] flex-col gap-0 p-0 sm:max-w-5xl"
         >
-          <div
-            className="relative w-full max-w-5xl h-[90vh] bg-card rounded-lg border border-border shadow-xl flex flex-col"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {document.label || document.filename}
-              </p>
-              <button
-                onClick={() => setPdfOpen(false)}
-                className="p-1.5 rounded-md text-muted-fg hover:text-foreground hover:bg-white/[0.05] transition-colors"
-                aria-label="Close"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+          <DialogTitle className="truncate border-b border-border px-4 py-3 pr-12 text-sm">
+            {document.label || document.filename}
+          </DialogTitle>
+          {pdfUrl && (
             <iframe
               src={pdfUrl}
-              className="flex-1 w-full rounded-b-lg"
+              title={`PDF preview of ${document.label || document.filename}`}
+              className="w-full flex-1 rounded-b-xl"
             />
-          </div>
-        </div>
-      )}
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { GetObjectCommand } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { createClient } from "@/lib/supabase/server"
-import { s3 } from "@/lib/s3"
+import { storageAdmin } from "@/lib/storage"
+import { isOwnedKey } from "@/lib/storage-keys"
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -30,12 +29,16 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Not found" }, { status: 404 })
   }
 
-  const command = new GetObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET!,
-    Key: document.s3_key,
-  })
+  // Owning the row doesn't prove owning the key: RLS on documents checks only user_id, and the
+  // service-role client below bypasses Storage RLS.
+  if (!isOwnedKey(document.s3_key, user.id, "resumes")) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
 
-  const url = await getSignedUrl(s3, command, { expiresIn: 300 })
+  const { data, error } = await storageAdmin().createSignedUrl(document.s3_key, 300)
+  if (error || !data) {
+    return NextResponse.json({ error: "File unavailable" }, { status: 404 })
+  }
 
-  return NextResponse.json({ url })
+  return NextResponse.json({ url: data.signedUrl })
 }

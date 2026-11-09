@@ -33,7 +33,7 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **Zod** for structured output schemas on the resume optimizer.
 
 ### Storage + docs
-- **AWS S3** via `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` — presigned PUT/GET URLs only, nothing streamed through the server.
+- **Supabase Storage**, private bucket `documents`, via `storageAdmin()` ([storage.ts](src/lib/storage.ts)) — server-signed upload tokens and GET URLs; every key passes `isOwnedKey` ([storage-keys.ts](src/lib/storage-keys.ts)) first. Uploads go browser → Storage directly.
 - **unpdf** for PDF text extraction, **mammoth** for DOCX, **@react-pdf/renderer** for generating cover-letter PDFs.
 
 ### Email
@@ -76,12 +76,12 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **`/settings`** — [page.tsx](src/app/(app)/settings/page.tsx) — profile display + sign-out.
 
 ### API (`src/app/api/`)
-- **`POST /api/upload`** — [route.ts](src/app/api/upload/route.ts) — returns presigned S3 URL. MIME-whitelisted (PDF/DOCX only), keyed as `resumes/{user.id}/{uuid}/{filename}`, 300s expiry.
-- **`POST /api/parse-resume`** — [route.ts](src/app/api/parse-resume/route.ts) — downloads from S3, enforces `startsWith("resumes/{user.id}/")` + 10 MB cap, extracts text (`unpdf` / `mammoth`).
+- **`POST /api/upload`** — [route.ts](src/app/api/upload/route.ts) — returns `{ key, token }` from `createSignedUploadUrl`. MIME-whitelisted (PDF/DOCX only), keyed as `resumes/{user.id}/{uuid}/{safeFilename(filename)}`.
+- **`POST /api/parse-resume`** — [route.ts](src/app/api/parse-resume/route.ts) — downloads from Storage, enforces `isOwnedKey` + 10 MB cap, extracts text (`unpdf` / `mammoth`).
 - **`POST /api/ai/resume-optimize`** — [route.ts](src/app/api/ai/resume-optimize/route.ts) — auth + app-ownership + 50 KB cap → `optimizeResume()` → stores result in `ai_results`.
 - **`POST /api/ai/cover-letter`** — [route.ts](src/app/api/ai/cover-letter/route.ts) — same pattern → `generateCoverLetter()`.
-- **`POST /api/pdf/cover-letter`** — [route.tsx](src/app/api/pdf/cover-letter/route.tsx) — `@react-pdf/renderer` → S3 upload → creates a `documents` row → presigned GET (1h) for download.
-- **`GET /api/view-resume`** — [route.ts](src/app/api/view-resume/route.ts) — returns a 5-min presigned GET URL for a document; auth + `.eq("user_id", user.id)` ownership guard. Used by ResumeCard PDF modal.
+- **`POST /api/pdf/cover-letter`** — [route.tsx](src/app/api/pdf/cover-letter/route.tsx) — `@react-pdf/renderer` → Storage upload under `cover_letters/{user.id}/` → creates a `documents` row → signed download URL (1h).
+- **`GET /api/view-resume`** — [route.ts](src/app/api/view-resume/route.ts) — returns a 5-min signed URL for a document; auth + `.eq("user_id", user.id)` row guard + `isOwnedKey` on the row's key (403), 404 `File unavailable` when the object is gone. Used by ResumeCard PDF dialog.
 - **`GET /api/cron/interview-reminder`** — [route.ts](src/app/api/cron/interview-reminder/route.ts) — cron endpoint protected by `CRON_SECRET` using `crypto.timingSafeEqual`.
 - **`GET /api/job-discovery/settings`** — [route.ts](src/app/api/job-discovery/settings/route.ts) — n8n reads a user's `{ enabled, keywords }` before scraping; `Bearer ${N8N_WEBHOOK_SECRET}` via `timingSafeEqual`, service-role client, `?user_id=` query param.
 - **`POST /api/webhooks/n8n/job-discovery`** — [route.ts](src/app/api/webhooks/n8n/job-discovery/route.ts) — n8n posts a discovered job; same secret auth, validates `user_id` via `auth.admin.getUserById`, dedupes by `url` per user, inserts `{ status: "wishlist", source: "online_jobs_ph", auto_discovered: true }`.
@@ -196,16 +196,16 @@ Prompts live under [src/lib/ai/prompts/](src/lib/ai/prompts/).
 ```txt
  ┌──────────────┐  1. POST /api/upload {filename, contentType}
  │ ResumeUpload │───────────────────────────────▶ ┌─────────────┐
- │  (client)    │ ◀────────── {url, key} ──────── │ auth + MIME │
+ │  (client)    │ ◀────────── {key, token} ────── │ auth + MIME │
  └──────┬───────┘                                 │  whitelist  │
         │                                         └─────────────┘
-        │ 2. PUT {url} (binary)      ┌────────┐
-        └───────────────────────────▶│   S3   │
-                                     └────────┘
+        │ 2. uploadToSignedUrl       ┌─────────┐
+        └───────────────────────────▶│ Storage │
+                                     └─────────┘
         3. POST /api/parse-resume {s3Key, contentType}
         ┌──────────────────────────────────────────────┐
-        │ auth + startsWith("resumes/{user.id}/") guard │
-        │ S3 GET + 10 MB cap                           │
+        │ auth + isOwnedKey(key, user.id) guard        │
+        │ Storage download + 10 MB cap                 │
         │ unpdf (PDF) / mammoth (DOCX)                 │
         └──────────────────────────────────────────────┘
                           │
@@ -309,9 +309,8 @@ Summarized from patterns observed across routes:
 |---|---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | public | both Supabase clients |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | public | both Supabase clients |
-| `SUPABASE_SERVICE_ROLE_KEY` | server | cron route only |
+| `SUPABASE_SERVICE_ROLE_KEY` | server | secret-guarded routes + [src/lib/storage.ts](src/lib/storage.ts) |
 | `GOOGLE_GEMINI_API_KEY` | server | AI SDK helpers |
-| `AWS_REGION` / `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` / `AWS_S3_BUCKET` | server | [src/lib/s3.ts](src/lib/s3.ts), upload/parse/pdf routes |
 | `RESEND_API_KEY` | server | [src/lib/resend.ts](src/lib/resend.ts) |
 | `CRON_SECRET` | server | interview cron |
 | `NEXT_PUBLIC_APP_URL` | public | OAuth callback URLs + email links |
@@ -349,7 +348,7 @@ Summarized from patterns observed across routes:
 | Server Actions for all mutations, `revalidatePath` + `redirect` | All actions.ts files |
 | `useOptimistic` + `useTransition` for instant feedback | KanbanBoard |
 | `next/dynamic` with `ssr: false` for heavy libs | KanbanBoard (DnD) |
-| Presigned URL direct-to-S3 (no proxy) | Upload + PDF export |
+| Signed upload token, browser → Storage directly (no proxy) | Resume upload |
 | In-memory aggregation over one broad query | Dashboard stats |
 | `Promise.all` for independent AI calls | Resume optimizer |
 | `Promise.allSettled` for fan-out email sends | Interview cron |
@@ -376,7 +375,7 @@ Since this document is a map rather than a change, verification = make sure the 
 1. `npm run dev` → open `http://localhost:3000`.
 2. Sign up via email or Google → confirm redirect to `/dashboard`.
 3. Create an application at `/applications/new`, drag it across Kanban columns, confirm DB updates via Supabase dashboard or a follow-up refresh.
-4. Upload a PDF + DOCX at `/resumes`; verify S3 key follows `resumes/{user_id}/...` and `extracted_text` is populated.
+4. Upload a PDF + DOCX at `/resumes`; verify the Storage key follows `resumes/{user_id}/...` and `extracted_text` is populated.
 5. From an application with a `job_description` + linked resume, run Optimize Resume and Cover Letter; check `ai_results` rows appear.
 6. Download a cover letter PDF — confirm a new `documents` row of type `cover_letter` and a fresh presigned GET URL.
 7. (Optional) Hit `/api/cron/interview-reminder` with a matching `Authorization: Bearer $CRON_SECRET` header; confirm reminder email and `reminder_sent = true`.
@@ -391,7 +390,7 @@ Since this document is a map rather than a change, verification = make sure the 
 
 **AI**: [resume-optimizer.ts](src/lib/ai/resume-optimizer.ts) · [cover-letter.ts](src/lib/ai/cover-letter.ts) · [prompts/](src/lib/ai/prompts/) · [rate-limit.ts](src/lib/rate-limit.ts)
 
-**Integrations**: [s3.ts](src/lib/s3.ts) · [resend.ts](src/lib/resend.ts) · [email/interview-reminder.tsx](src/lib/email/interview-reminder.tsx) · [pdf/cover-letter-template.tsx](src/lib/pdf/cover-letter-template.tsx)
+**Integrations**: [storage.ts](src/lib/storage.ts) · [resend.ts](src/lib/resend.ts) · [email/interview-reminder.tsx](src/lib/email/interview-reminder.tsx) · [pdf/cover-letter-template.tsx](src/lib/pdf/cover-letter-template.tsx)
 
 **Feature components**: [KanbanBoard.tsx](src/components/applications/KanbanBoard.tsx) · [ApplicationsView.tsx](src/components/applications/ApplicationsView.tsx) · [ResumeUpload.tsx](src/components/resumes/ResumeUpload.tsx) · [ResumeCard.tsx](src/components/resumes/ResumeCard.tsx)
 

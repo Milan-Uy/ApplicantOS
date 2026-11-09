@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PutObjectCommand } from "@aws-sdk/client-s3"
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 import { createClient } from "@/lib/supabase/server"
 import { randomUUID } from "crypto"
-import { s3 } from "@/lib/s3"
+import { storageAdmin } from "@/lib/storage"
+import { safeFilename } from "@/lib/storage-keys"
+import { logError } from "@/lib/log"
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
@@ -35,15 +35,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unsupported file type. Use PDF or DOCX." }, { status: 400 })
   }
 
-  const key = `resumes/${user.id}/${randomUUID()}/${filename}`
+  const key = `resumes/${user.id}/${randomUUID()}/${safeFilename(filename)}`
 
-  const command = new PutObjectCommand({
-    Bucket: process.env.AWS_S3_BUCKET!,
-    Key: key,
-    ContentType: contentType,
-  })
+  const { data, error } = await storageAdmin().createSignedUploadUrl(key)
+  if (error) {
+    logError("api.upload.sign", error, { userId: user.id })
+    return NextResponse.json({ error: "Failed to get upload URL" }, { status: 500 })
+  }
 
-  const url = await getSignedUrl(s3, command, { expiresIn: 300 })
-
-  return NextResponse.json({ url, key })
+  return NextResponse.json({ key, token: data.token })
 }
