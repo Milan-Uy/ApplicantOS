@@ -12,10 +12,13 @@ export function ResumePicker({
   applicationId,
   currentResumeId,
   resumes,
+  disabled = false,
 }: {
   applicationId: string
   currentResumeId: string | null
   resumes: { id: string; label: string | null; filename: string }[]
+  /** Set while an AI request runs: a switch mid-request would pair old-resume output with the new choice. */
+  disabled?: boolean
 }) {
   // Shows the choice at once; falls back to the server value if the action fails.
   const [value, setValue] = useOptimistic(currentResumeId)
@@ -46,7 +49,7 @@ export function ResumePicker({
       <Label htmlFor="resume-picker" className="text-muted-fg">
         Resume
       </Label>
-      <Select value={value ?? undefined} onValueChange={change} disabled={pending}>
+      <Select value={value ?? undefined} onValueChange={change} disabled={pending || disabled}>
         <SelectTrigger id="resume-picker" size="sm" className="w-48 sm:w-56">
           <SelectValue placeholder="Choose a resume" />
         </SelectTrigger>

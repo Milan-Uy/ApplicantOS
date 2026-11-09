@@ -156,7 +156,7 @@ export function CoverLetterClient({
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <ResumePicker applicationId={applicationId} currentResumeId={currentResumeId} resumes={resumes} />
+            <ResumePicker applicationId={applicationId} currentResumeId={currentResumeId} resumes={resumes} disabled={streaming} />
             <Link href={`/applications/${applicationId}/edit`} className="text-sm text-accent hover:underline">
               Edit application
             </Link>

@@ -40,7 +40,12 @@ export async function POST(request: Request) {
 
   // Strings only: an array's .length would let any size through the cap.
   const isText = (v: unknown) => typeof v === "string"
-  if (!isText(jobDescription) || !isText(resumeText) || (whyThisRole != null && !isText(whyThisRole))) {
+  if (
+    !isText(jobDescription) ||
+    !isText(resumeText) ||
+    (whyThisRole != null && !isText(whyThisRole)) ||
+    (tone != null && tone !== "formal" && tone !== "conversational")
+  ) {
     return NextResponse.json({ error: "Invalid input" }, { status: 400 })
   }
 

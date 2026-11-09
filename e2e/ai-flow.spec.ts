@@ -172,3 +172,36 @@ test("regenerate is disabled while a save is in flight", async ({ page, heroAppI
   await expect(toast(page, "success")).toContainText("Cover letter saved")
   await expect(page.getByRole("button", { name: "Regenerate" })).toBeEnabled()
 })
+
+test("the resume picker is locked while an AI request is running", async ({ page, heroAppId }) => {
+  await linkResume(heroAppId)
+  let release!: () => void
+  const held = new Promise<void>((r) => (release = r))
+  await page.route("**/api/ai/cover-letter", async (route) => {
+    await held
+    await route.fulfill({ status: 200, contentType: "text/plain; charset=utf-8", body: "Dear Team" })
+  })
+  await page.route("**/api/ai/resume-optimize", async (route) => {
+    await held
+    await route.fulfill({ json: SEED_AI_RESULTS[0].result })
+  })
+
+  for (const [tool, button] of [["cover-letter", "Regenerate"], ["resume", "Re-analyze"]]) {
+    await open(page, `/applications/${heroAppId}/${tool}`)
+    await page.getByRole("button", { name: button }).click()
+    await expect(page.getByRole("combobox", { name: "Resume" })).toBeDisabled()
+  }
+  release()
+})
+
+test("AI routes reject non-string or oversized inputs", async ({ page, heroAppId }) => {
+  const big = "x".repeat(60 * 1024)
+  const cover = await page.request.post("/api/ai/cover-letter", {
+    data: { applicationId: heroAppId, jobDescription: "JD", resumeText: "CV", tone: big },
+  })
+  expect(cover.status()).toBe(400)
+  const optimize = await page.request.post("/api/ai/resume-optimize", {
+    data: { applicationId: heroAppId, jobDescription: "JD", resumeText: [big] },
+  })
+  expect(optimize.status()).toBe(400)
+})

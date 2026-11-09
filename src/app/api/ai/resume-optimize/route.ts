@@ -36,6 +36,11 @@ export async function POST(request: Request) {
     )
   }
 
+  // Strings only: an array's .length would let any size through the cap.
+  if (typeof resumeText !== "string" || typeof jobDescription !== "string") {
+    return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+  }
+
   const MAX = 50 * 1024
   if (resumeText.length > MAX || jobDescription.length > MAX) {
     return NextResponse.json({ error: "Input too large" }, { status: 400 })
