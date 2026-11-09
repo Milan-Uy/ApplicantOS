@@ -23,4 +23,5 @@ export const AXE_ROUTES: string[] = [
   "application-new",
   "application-detail",
   "application-edit",
+  "resumes",
 ]
