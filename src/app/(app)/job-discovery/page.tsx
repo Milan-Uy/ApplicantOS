@@ -28,6 +28,7 @@ export default async function JobDiscoveryPage() {
     .select("id, role, company, url, created_at, status")
     .eq("user_id", user.id)
     .eq("auto_discovered", true)
+    .eq("status", "wishlist") // once it moves on it's a real application, not a discovery
     .gte("created_at", thirtyDaysAgo.toISOString())
     .order("created_at", { ascending: false })
 

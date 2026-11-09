@@ -61,20 +61,69 @@ test("dismiss is undoable", async ({ page }) => {
 
 test("demo profile is locked", async ({ page }) => {
   await open(page, "/settings")
-  const name = page.getByLabel("Name")
-  const before = await name.inputValue()
-  await name.fill(`Changed ${Date.now()}`)
+  // Name is required: fill both so the email change really reaches the server.
+  await page.getByLabel("Name").fill(`Changed ${Date.now()}`)
+  await page.getByLabel("Email").fill("someone-else@example.com")
+  const submitted = page.waitForResponse(
+    (r) => r.request().method() === "POST" && !!r.request().headers()["next-action"]
+  )
   await page.getByRole("button", { name: "Save Changes" }).click()
+  await submitted
   await expect(page.locator('[data-sonner-toast][data-type="error"]')).toContainText(DEMO_LOCKED)
 
-  // Email: the change that would let a visitor take the demo account.
-  await page.getByLabel("Email").fill("someone-else@example.com")
-  await page.getByRole("button", { name: "Save Changes" }).click()
-  await expect(page.locator('[data-sonner-toast][data-type="error"]').last()).toContainText(DEMO_LOCKED)
+  const { data } = await admin().auth.admin.getUserById((await findUserId(admin(), E2E_EMAIL))!)
+  expect(data.user?.email).toBe(E2E_EMAIL)
+  expect(data.user?.new_email ?? null).toBeNull()
+  expect(data.user?.user_metadata?.full_name ?? null).toBeNull()
+})
 
-  await open(page, "/settings")
-  await expect(page.getByLabel("Name")).toHaveValue(before)
-  await expect(page.getByLabel("Email")).toHaveValue(E2E_EMAIL)
+test("a dismissal pending across navigation can't come back to delete an undone job", async ({ page }) => {
+  test.setTimeout(60_000)
+  // Compile /applications first: a slow first visit would outlast the 5 s undo window.
+  await open(page, "/applications")
+  await open(page, "/job-discovery")
+  const dismiss = page.getByRole("button", { name: "Dismiss Next.js Frontend Developer" })
+  await dismiss.click()
+  // Client-side navigation away and back while the first toast is still open.
+  await page.getByRole("link", { name: "Applications" }).first().click()
+  await page.waitForURL("**/applications")
+  await page.getByRole("link", { name: "Job Discovery" }).first().click()
+  await page.waitForURL("**/job-discovery")
+  // waitForURL resolves on the loading skeleton; wait for the real cards.
+  await expect(cards(page).first()).toBeVisible()
+  // Still pending, so still hidden: it can't be dismissed a second time.
+  await expect(dismiss).toHaveCount(0)
+  await page.getByRole("button", { name: "Undo" }).click()
+  await expect(dismiss).toBeVisible()
+  await page.mouse.move(0, 0)
+  await page.waitForTimeout(7_000)
+  await open(page, "/job-discovery")
+  await expect(dismiss).toBeVisible()
+})
+
+test("dismiss never deletes an application that moved past wishlist", async ({ page }) => {
+  test.setTimeout(60_000)
+  const userId = (await findUserId(admin(), E2E_EMAIL))!
+  const row = async (role: string) =>
+    (await admin().from("applications").select("id").eq("user_id", userId).eq("role", role).maybeSingle()).data
+
+  // Already moved on before the page loaded: not listed as a discovery.
+  const moved = await row("React Developer (Full-time, Remote)")
+  await admin().from("applications").update({ status: "interview" }).eq("id", moved!.id)
+  await open(page, "/job-discovery")
+  await expect(page.getByRole("button", { name: "Dismiss React Developer (Full-time, Remote)" })).toHaveCount(0)
+
+  // Moved on while the undo window was open: the delete must not touch it.
+  const role = "Full-Stack Developer (React + Node)"
+  const persisted = page.waitForResponse(
+    (r) => r.request().method() === "POST" && !!r.request().headers()["next-action"],
+    { timeout: 15_000 }
+  )
+  await page.getByRole("button", { name: `Dismiss ${role}` }).click()
+  await admin().from("applications").update({ status: "applied" }).eq("id", (await row(role))!.id)
+  await page.mouse.move(0, 0)
+  await persisted
+  expect(await row(role)).not.toBeNull()
 })
 
 test("job discovery uses tokens, not inline styles", () => {

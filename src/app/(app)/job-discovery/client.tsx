@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useSyncExternalStore } from "react"
 import Link from "next/link"
 import { ArrowRight, PauseCircle, Search } from "lucide-react"
 import { toast } from "sonner"
@@ -17,20 +17,32 @@ type Props = {
   initialDiscovered: DiscoveredJob[]
 }
 
+// Dismissed ids live outside the component: the undo toast outlives this page, so a
+// remount (navigate away and back) must still see what is pending and what was undone.
+// Ids stay after the delete lands; the revalidated list no longer has those rows.
+let hiddenIds: ReadonlySet<string> = new Set()
+const listeners = new Set<() => void>()
+const NONE: ReadonlySet<string> = new Set()
+
+function setHiddenId(id: string, hide: boolean) {
+  const next = new Set(hiddenIds)
+  if (hide) next.add(id)
+  else next.delete(id)
+  hiddenIds = next
+  listeners.forEach((l) => l())
+}
+
+function subscribe(listener: () => void) {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
 export function JobDiscoveryClient({ settings, initialDiscovered }: Props) {
   const [keywords, setKeywords] = useState<string[]>(settings.keywords ?? [])
-  // Hidden ids, not a filtered copy: Undo puts the card back where it was, and the
-  // server's revalidated list drops the row once the delete lands.
-  const [hidden, setHidden] = useState<ReadonlySet<string>>(new Set())
+  const hidden = useSyncExternalStore(subscribe, () => hiddenIds, () => NONE)
   const discovered = initialDiscovered.filter((j) => !hidden.has(j.id))
-
-  const setHiddenId = (id: string, hide: boolean) =>
-    setHidden((h) => {
-      const next = new Set(h)
-      if (hide) next.add(id)
-      else next.delete(id)
-      return next
-    })
 
   const handleKeywords = async (next: string[]) => {
     const prev = keywords

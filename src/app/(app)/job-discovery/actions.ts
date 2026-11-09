@@ -28,6 +28,7 @@ export async function dismissJob(id: string) {
     .eq("id", id)
     .eq("user_id", user.id)
     .eq("auto_discovered", true)
+    .eq("status", "wishlist") // never delete an application the user has started on
   if (error) throw new Error(error.message)
   revalidatePath("/job-discovery")
 }
