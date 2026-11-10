@@ -3,7 +3,7 @@ import { streamText, type StreamTextOnErrorCallback } from "ai"
 import { COVER_LETTER_PROMPT } from "./prompts/cover-letter"
 
 const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY })
-const model = google("gemini-2.5-flash")
+const model = google("gemini-3.5-flash-lite")
 
 export function streamCoverLetter(params: {
   jobDescription: string

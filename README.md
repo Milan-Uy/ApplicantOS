@@ -8,7 +8,7 @@
 
 - **Kanban board** — drag-and-drop applications across status columns
 - **Application tracking** — wishlist → applied → interview → offer/rejected
-- **AI Resume Optimizer** — tailored suggestions powered by Gemini 2.5 Flash
+- **AI Resume Optimizer** — tailored suggestions powered by Gemini 3.5 Flash-Lite
 - **AI Cover Letter Generator** — job-specific cover letters in seconds
 - **Resume library** — upload, store, and parse resumes (PDF/DOCX) via Supabase Storage
 - **Dashboard** — stats, recent activity, and upcoming interviews
@@ -17,7 +17,7 @@
 
 ## Tech Stack
 
-Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Supabase (Auth + DB + Storage) · Vercel AI SDK · Gemini 2.5 Flash · Resend
+Next.js 15 · React 19 · TypeScript · Tailwind CSS 4 · shadcn/ui · Supabase (Auth + DB + Storage) · Vercel AI SDK · Gemini 3.5 Flash-Lite · Resend
 
 ## Getting Started
 

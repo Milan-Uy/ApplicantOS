@@ -29,7 +29,7 @@ Single-tenant per user — every resource is scoped to a Supabase auth user via 
 - **Service role client** — built ad-hoc inside the cron route only, never exposed to the app surface.
 
 ### AI
-- **Vercel AI SDK `ai` v6.0.146** + **`@ai-sdk/google` v3.0.58** driving **Gemini 2.5 Flash** (`gemini-2.5-flash`).
+- **Vercel AI SDK `ai` v6.0.146** + **`@ai-sdk/google` v3.0.58** driving **Gemini 3.5 Flash-Lite** (`gemini-3.5-flash-lite`).
 - **Zod** for structured output schemas on the resume optimizer.
 
 ### Storage + docs
@@ -157,7 +157,7 @@ drag event ───────────┘           │
 
 ## 7. AI Integration
 
-Model: **Gemini 2.5 Flash** wired through the Vercel AI SDK. `GOOGLE_GEMINI_API_KEY` is server-only.
+Model: **Gemini 3.5 Flash-Lite** wired through the Vercel AI SDK. `GOOGLE_GEMINI_API_KEY` is server-only.
 
 ### Resume Optimizer — [src/lib/ai/resume-optimizer.ts](src/lib/ai/resume-optimizer.ts)
 Two structured calls fired in **`Promise.all`**, each using `generateText` with `Output.object()` + a Zod schema:
