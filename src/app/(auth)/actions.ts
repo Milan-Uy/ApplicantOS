@@ -1,27 +1,35 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
+import { logError } from "@/lib/log"
 
-export async function signIn(formData: FormData) {
-  const supabase = await createClient()
+const DEMO_UNAVAILABLE = "The demo is not available right now."
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
+// Passwordless, so a visitor changing the demo password breaks nothing. Takes no input: the token it
+// returns can only ever sign in DEMO_EMAIL, which is what every caller gets anyway. The browser
+// verifies it, because Supabase rate-limits /verify per client IP and from here every visitor would
+// share the server's. No email is sent.
+export async function signInAsDemo(): Promise<{ error: string } | { tokenHash: string }> {
+  const email = process.env.DEMO_EMAIL?.trim()
+  if (!email) return { error: DEMO_UNAVAILABLE }
+
+  const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: { persistSession: false },
   })
-
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email })
   if (error) {
-    return { error: error.message }
+    logError("demo-login", error)
+    return { error: DEMO_UNAVAILABLE }
   }
-
-  redirect("/dashboard")
+  return { tokenHash: data.properties.hashed_token }
 }
 
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: formData.get("email") as string,
     password: formData.get("password") as string,
     options: {
@@ -33,6 +41,10 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     return { error: error.message }
+  }
+  // With "Confirm email" on there is no session until the link is clicked; /dashboard would bounce to /login.
+  if (!data.session) {
+    return { notice: "Check your email for a confirmation link, then sign in." }
   }
 
   redirect("/dashboard")
