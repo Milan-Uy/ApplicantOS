@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useActionState } from "react"
+import { startTransition, useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { Cpu, ArrowRight, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -180,7 +180,16 @@ export default function LoginPage() {
 
           {state?.error && <AuthError message={state.error} />}
 
-          <form action={formAction} className="mt-8 flex flex-col gap-4">
+          <form
+            // Not action={formAction}: React resets a form after its action, which would wipe the
+            // email and password on a failed attempt.
+            onSubmit={(e) => {
+              e.preventDefault()
+              const data = new FormData(e.currentTarget)
+              startTransition(() => formAction(data))
+            }}
+            className="mt-8 flex flex-col gap-4"
+          >
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" autoComplete="email" required placeholder="you@example.com" className="h-10" />

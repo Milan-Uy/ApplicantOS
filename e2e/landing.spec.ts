@@ -35,6 +35,35 @@ test("demo login verifies from the visitor's browser", async ({ page }) => {
   await page.waitForURL("**/dashboard", { timeout: 5_000 })
 })
 
+// Each generateLink replaces the account's one token, so a second visitor can void the first's.
+test("demo login survives a concurrent visitor", async ({ page }) => {
+  let raced = false
+  await page.route("**/auth/v1/verify**", async (route) => {
+    if (!raced) {
+      raced = true
+      const { error } = await admin().auth.admin.generateLink({ type: "magiclink", email: E2E_EMAIL })
+      if (error) throw error
+    }
+    await route.continue()
+  })
+  await page.goto("/")
+  await page.getByRole("button", { name: "Try the demo" }).click()
+  await page.waitForURL("**/dashboard", { timeout: 10_000 })
+})
+
+test("failed login keeps what was typed", async ({ page }) => {
+  await page.goto("/login")
+  await page.waitForLoadState("networkidle")
+  await page.getByLabel("Email").fill(E2E_EMAIL)
+  await page.getByLabel("Password").fill("not-the-password")
+  await page.getByRole("button", { name: "Sign in", exact: true }).click()
+  await expect(page.getByRole("alert")).toBeVisible()
+  // React's automatic form-action reset lands after the error renders; nothing to wait on when it doesn't.
+  await page.waitForTimeout(1_000)
+  await expect(page.getByLabel("Email")).toHaveValue(E2E_EMAIL)
+  await expect(page.getByLabel("Password")).toHaveValue("not-the-password")
+})
+
 test("demo login survives a password change", async ({ page }) => {
   await setPassword(randomUUID())
   try {

@@ -10,13 +10,18 @@ import { createClient } from "@/lib/supabase/client"
 export function TryDemoButton() {
   const router = useRouter()
   const [state, action, pending] = useActionState(async () => {
-    const result = await signInAsDemo()
-    if ("error" in result) return result
-    // Verified here, not on the server, so Supabase's per-IP limit applies to this visitor alone.
-    const { error } = await createClient().auth.verifyOtp({ token_hash: result.tokenHash, type: "email" })
-    if (error) return { error: "The demo is not available right now." }
-    router.push("/dashboard")
-    return { redirecting: true }
+    // The account holds one token at a time, so a concurrent visitor can void ours: fetch a fresh one.
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const result = await signInAsDemo()
+      if ("error" in result) return result
+      // Verified here, not on the server, so Supabase's per-IP limit applies to this visitor alone.
+      const { error } = await createClient().auth.verifyOtp({ token_hash: result.tokenHash, type: "email" })
+      if (!error) {
+        router.push("/dashboard")
+        return { redirecting: true }
+      }
+    }
+    return { error: "The demo is not available right now." }
   }, null)
   const busy = pending || (!!state && "redirecting" in state)
 
