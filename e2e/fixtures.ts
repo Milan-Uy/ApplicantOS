@@ -1,4 +1,4 @@
-import { test as base } from "@playwright/test"
+import { test as base, type Page } from "@playwright/test"
 import { createClient } from "@supabase/supabase-js"
 import { findUserId, resetDemoUser } from "@/lib/demo/reset"
 import { SEED_HERO_APP } from "@/lib/demo/seed-data"
@@ -10,6 +10,19 @@ export function admin() {
   return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
   })
+}
+
+export const STORAGE_STATE = "e2e/.auth/e2e.json"
+
+/** Logs the e2e user in on `page` (needs a baseURL) and saves the session every authed spec starts from. */
+export async function saveSession(page: Page) {
+  await page.goto("/login")
+  await page.fill('input[name="email"]', E2E_EMAIL)
+  await page.fill('input[name="password"]', E2E_PASSWORD)
+  await page.locator('form button[type="submit"]').first().click()
+  // The first dev compile of /dashboard is slow.
+  await page.waitForURL("**/dashboard", { timeout: 90_000 })
+  await page.context().storageState({ path: STORAGE_STATE })
 }
 
 export function resetForSpec() {

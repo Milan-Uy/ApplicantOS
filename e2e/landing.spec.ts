@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { findUserId } from "@/lib/demo/reset"
-import { test, expect, admin, E2E_EMAIL, E2E_PASSWORD } from "./fixtures"
+import { test, expect, admin, saveSession, E2E_EMAIL, E2E_PASSWORD } from "./fixtures"
 
 test.use({ storageState: { cookies: [], origins: [] } })
 
@@ -11,9 +11,13 @@ async function setPassword(password: string) {
   if (error) throw error
 }
 
-// Backup only: the password test restores in its own finally so later tests log in normally.
-test.afterAll(async () => {
+// A password change revokes every session of the user, including the saved one later specs start
+// from, so restore the password (backup for the test's own finally) and save a fresh session.
+test.afterAll(async ({ browser }, testInfo) => {
   await setPassword(E2E_PASSWORD)
+  const context = await browser.newContext({ baseURL: testInfo.project.use.baseURL })
+  await saveSession(await context.newPage())
+  await context.close()
 })
 
 test("Try the demo logs in", async ({ page }) => {
