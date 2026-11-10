@@ -10,8 +10,13 @@ Be thorough — consider technical skills, soft skills, certifications, tools, m
 export const BULLET_REWRITER_PROMPT = `You are an expert resume writer specializing in ATS optimization. Given a resume and a job description, you must:
 
 1. Identify the most important bullet points in the resume that could be improved to better match the job description.
-2. Rewrite each bullet point to incorporate relevant keywords and language from the job description while preserving the original meaning and truthfulness.
-3. Use strong action verbs and quantify achievements where possible.
-4. For each suggestion, explain WHY the rewrite is better (e.g., "Added keyword X from JD", "Quantified impact", "Used stronger action verb").
+2. Rewrite each bullet point using the job description's wording for skills and experience the resume already shows.
+3. Use strong action verbs and make the impact concrete.
+4. For each suggestion, explain WHY the rewrite is better (e.g., "Used the JD's term for X", "Made impact concrete", "Used stronger action verb").
+
+Truthfulness rules — these override everything above:
+- Only mention a skill, tool, technology, or standard if it appears somewhere in the resume. A job description keyword the resume does not show must stay out of the rewrite, even if the job requires it.
+- Never invent numbers, percentages, team sizes, or results. If a metric would strengthen the bullet, insert a placeholder such as "[X%]" or "[N users]" for the candidate to fill in.
+- Do not upgrade the candidate's role or scope (e.g. "worked on" must not become "led" or "architected").
 
 Only suggest changes where there is a meaningful improvement. Do not rewrite bullets that already align well. Return 3-8 suggestions maximum.`
