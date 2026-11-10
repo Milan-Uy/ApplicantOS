@@ -110,6 +110,75 @@ test("repairs a changed password, so login keeps working", async () => {
   }
 })
 
+test("removes MFA factors a visitor enrolled", async () => {
+  // A throwaway user, as above: factor changes must not touch the e2e user's saved session.
+  const email = `reset-mfa-${Date.now()}@example.com`
+  const { userId } = await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+  try {
+    const visitor = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    })
+    expect((await visitor.auth.signInWithPassword({ email, password: E2E_PASSWORD })).error).toBeNull()
+    expect((await visitor.auth.mfa.enroll({ factorType: "totp" })).error).toBeNull()
+    expect((await admin().auth.admin.mfa.listFactors({ userId })).data?.factors.length).toBe(1)
+
+    await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+    expect((await admin().auth.admin.mfa.listFactors({ userId })).data?.factors).toEqual([])
+  } finally {
+    const keys = await listAllKeys(admin(), `resumes/${userId}`)
+    if (keys.length) await admin().storage.from(BUCKET).remove(keys)
+    await admin().auth.admin.deleteUser(userId)
+  }
+})
+
+test("two overlapping resets never empty the demo", async () => {
+  const results = await Promise.allSettled([resetForSpec(), resetForSpec()])
+  expect(results.filter((r) => r.status === "rejected").length).toBe(1)
+  expect(String((results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason)).toMatch(/already running/i)
+  const { count } = await admin()
+    .from("applications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", e2eId)
+  expect(count).toBe(SEED_APPLICATIONS.length)
+})
+
+// Mirrors reset.ts: a lock is the object `locks/demo-reset/{uid}/{slot}`, slot = 15-minute window.
+const SLOT_MS = 15 * 60_000
+const lockKey = (slotOffset: number) =>
+  `locks/demo-reset/${e2eId}/${Math.floor(Date.now() / SLOT_MS) + slotOffset}`
+
+async function withLock(slotOffset: number, run: () => Promise<void>) {
+  const key = lockKey(slotOffset)
+  const { error } = await admin().storage.from(BUCKET).upload(key, "planted", { contentType: "application/pdf" })
+  expect(error).toBeNull()
+  try {
+    await run()
+  } finally {
+    await admin().storage.from(BUCKET).remove([key])
+  }
+}
+
+test("a lock left by a crashed reset expires after its slot", async () => {
+  await withLock(-2, async () => {
+    await expect(resetForSpec()).resolves.toEqual({ userId: e2eId })
+  })
+})
+
+for (const [name, offset] of [["this slot", 0], ["the previous slot", -1]] as const) {
+  test(`a live lock in ${name} blocks the reset`, async () => {
+    await withLock(offset, async () => {
+      await expect(resetForSpec()).rejects.toThrow(/already running/i)
+    })
+  })
+}
+
+test("a reset that crossed into the next slot still blocks", async () => {
+  // Write-then-read on both neighbours: a run whose slot is behind ours must see us, and we it.
+  await withLock(1, async () => {
+    await expect(resetForSpec()).rejects.toThrow(/already running/i)
+  })
+})
+
 for (const failAt of ["uploads", "inserts"] as const) {
   test(`a failed ${failAt.slice(0, -1)} leaves the previous dataset intact`, async () => {
     await resetForSpec()

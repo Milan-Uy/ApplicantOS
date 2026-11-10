@@ -18,6 +18,8 @@ const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PAGE = 1000
 const DAY = 86_400_000
+// Longer than any Vercel function may run (max 800 s), so a live run's lock is never ignored.
+const LOCK_SLOT = 15 * 60_000
 
 interface ResetOptions {
   password?: string
@@ -59,8 +61,8 @@ export async function listAllKeys(admin: SupabaseClient, prefix: string): Promis
 /**
  * Replaces the user's data with the seed dataset. The new dataset is built before the old one is
  * removed, so a failure before the final deletes leaves the previous demo intact.
- * shortcut: no transaction — a crash between insert and delete leaves duplicates until the next
- * reset; serialise overlapping resets (cron + manual) with a lock row if that ever happens.
+ * Overlapping resets of the same user are refused ("already running").
+ * shortcut: no transaction — a crash between insert and delete leaves duplicates until the next reset.
  */
 export async function resetDemoUser(
   admin: SupabaseClient,
@@ -98,15 +100,62 @@ export async function resetDemoUser(
     allowedMimeTypes: [PDF, DOCX],
   })
   if (bucketError && !/already exists/i.test(bucketError.message)) throw bucketError
+
+  // 3. One reset per user at a time: overlapping runs would each delete the other's new rows.
+  const lock = await acquireLock(admin, userId)
+  try {
+    // A visitor can enroll a factor on the shared account; drop it so demo login stays one click.
+    const { data: mfa, error: mfaError } = await admin.auth.admin.mfa.listFactors({ userId })
+    if (mfaError) throw mfaError
+    for (const f of mfa.factors) await must(admin.auth.admin.mfa.deleteFactor({ id: f.id, userId }))
+
+    await replaceDataset(admin, userId, failAt)
+  } finally {
+    await admin.storage.from(BUCKET).remove([lock])
+  }
+  return { userId }
+}
+
+/**
+ * Takes the user's reset lock `locks/demo-reset/{uid}/{slot}`, slot = LOCK_SLOT-long window. Creating it
+ * with upsert: false is atomic within a slot; across a slot boundary each run creates its own key, then
+ * lists both neighbours, so of two overlapping runs at least one sees the other and backs off.
+ * A lock never released (function killed by a timeout) is ignored two slots later, so nothing ever
+ * deletes a lock it has not proven stale.
+ */
+async function acquireLock(admin: SupabaseClient, userId: string): Promise<string> {
+  const dir = `locks/demo-reset/${userId}`
+  const slot = Math.floor(Date.now() / LOCK_SLOT)
+  const key = `${dir}/${slot}`
+  const storage = admin.storage.from(BUCKET)
+  const busy = () => new Error("Demo reset already running")
+
+  // The content type only satisfies the bucket's PDF/DOCX whitelist.
+  const { error } = await storage.upload(key, new Date().toISOString(), { contentType: PDF, upsert: false })
+  if (error) throw /already exists/i.test(error.message) ? busy() : error
+
+  const { data, error: listError } = await storage.list(dir, { limit: PAGE })
+  const slots = (data ?? []).map((o) => Number(o.name))
+  if (listError || slots.some((s) => s === slot - 1 || s === slot + 1)) {
+    await storage.remove([key])
+    throw listError ?? busy()
+  }
+  const expired = slots.filter((s) => s < slot - 1).map((s) => `${dir}/${s}`)
+  if (expired.length) await storage.remove(expired)
+  return key
+}
+
+/** Steps 4-8: build the seed dataset beside the old one, then remove the old one. */
+async function replaceDataset(admin: SupabaseClient, userId: string, failAt: ResetOptions["failAt"]) {
   const storage = admin.storage.from(BUCKET)
 
-  // 3. Remember what is there now.
+  // 4. Remember what is there now.
   const oldKeys = [
     ...(await listAllKeys(admin, `resumes/${userId}`)),
     ...(await listAllKeys(admin, `cover_letters/${userId}`)),
   ]
 
-  // 4. Upload the new files under a fresh prefix.
+  // 5. Upload the new files under a fresh prefix.
   const runId = randomUUID()
   const uploaded: string[] = []
   const removeUploads = async () => {
@@ -128,7 +177,7 @@ export async function resetDemoUser(
     throw e
   }
 
-  // 5. Insert the new rows next to the old ones.
+  // 6. Insert the new rows next to the old ones.
   const now = Date.now()
   const daysAgo = (d: number) => new Date(now - d * DAY).toISOString()
   const appRows = SEED_APPLICATIONS.map(({ appliedDaysAgo, createdDaysAgo, interviewInDays, ...a }) => ({
@@ -177,19 +226,18 @@ export async function resetDemoUser(
     throw e
   }
 
-  // 6. Delete every other row the user owns (applications cascade to ai_results, which has no user_id).
+  // 7. Delete every other row the user owns (applications cascade to ai_results, which has no user_id).
   // "All but the new ids" instead of a list of old ids: reads are capped at the API's max rows.
   // A failure here leaves old + new rows — duplicates, never an empty demo; the next reset cleans up.
   const notIn = (rows: { id: string }[]) => `(${rows.map((r) => r.id).join(",")})`
   await must(admin.from("documents").delete().eq("user_id", userId).not("id", "in", notIn(docRows)))
   await must(admin.from("applications").delete().eq("user_id", userId).not("id", "in", notIn(appRows)))
 
-  // 7. Remove the old files.
+  // 8. Remove the old files.
   if (oldKeys.length) {
     const { error } = await storage.remove(oldKeys)
     if (error) throw error
   }
-  return { userId }
 }
 
 async function must(query: PromiseLike<{ error: unknown }>) {
