@@ -5,44 +5,25 @@ import { createClient as createAdminClient } from "@supabase/supabase-js"
 import { createClient } from "@/lib/supabase/server"
 import { logError } from "@/lib/log"
 
-export async function signIn(formData: FormData) {
-  const supabase = await createClient()
+const DEMO_UNAVAILABLE = "The demo is not available right now."
 
-  const { error } = await supabase.auth.signInWithPassword({
-    email: formData.get("email") as string,
-    password: formData.get("password") as string,
-  })
-
-  if (error) {
-    return { error: error.message }
-  }
-
-  redirect("/dashboard")
-}
-
-// Passwordless, so a visitor changing the demo password breaks nothing. Takes no input: it can only
-// ever sign in DEMO_EMAIL, and the token never leaves the server. No email is sent.
-export async function signInAsDemo(): Promise<{ error: string } | void> {
+// Passwordless, so a visitor changing the demo password breaks nothing. Takes no input: the token it
+// returns can only ever sign in DEMO_EMAIL, which is what every caller gets anyway. The browser
+// verifies it, because Supabase rate-limits /verify per client IP and from here every visitor would
+// share the server's. No email is sent.
+export async function signInAsDemo(): Promise<{ error: string } | { tokenHash: string }> {
   const email = process.env.DEMO_EMAIL?.trim()
-  if (!email) return { error: "The demo is not available right now." }
+  if (!email) return { error: DEMO_UNAVAILABLE }
 
   const admin = createAdminClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, {
     auth: { persistSession: false },
   })
-  const { data, error: linkError } = await admin.auth.admin.generateLink({ type: "magiclink", email })
-  if (linkError) {
-    logError("demo-login", linkError)
-    return { error: "The demo is not available right now." }
-  }
-
-  const supabase = await createClient()
-  const { error } = await supabase.auth.verifyOtp({ token_hash: data.properties.hashed_token, type: "email" })
+  const { data, error } = await admin.auth.admin.generateLink({ type: "magiclink", email })
   if (error) {
     logError("demo-login", error)
-    return { error: "The demo is not available right now." }
+    return { error: DEMO_UNAVAILABLE }
   }
-
-  redirect("/dashboard")
+  return { tokenHash: data.properties.hashed_token }
 }
 
 export async function signUp(formData: FormData) {

@@ -26,6 +26,15 @@ test("Try the demo logs in", async ({ page }) => {
   await page.waitForURL("**/dashboard", { timeout: 5_000 })
 })
 
+// Supabase rate-limits /verify per client IP; from the server every visitor would share one bucket.
+test("demo login verifies from the visitor's browser", async ({ page }) => {
+  await page.goto("/")
+  const verify = page.waitForRequest((r) => r.url().includes("/auth/v1/verify"), { timeout: 5_000 })
+  await page.getByRole("button", { name: "Try the demo" }).click()
+  await verify
+  await page.waitForURL("**/dashboard", { timeout: 5_000 })
+})
+
 test("demo login survives a password change", async ({ page }) => {
   await setPassword(randomUUID())
   try {
