@@ -18,8 +18,8 @@ const DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.doc
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 const PAGE = 1000
 const DAY = 86_400_000
-// Longer than any Vercel function may run, so only a crashed run's lock ever goes stale.
-const LOCK_TTL = 15 * 60_000
+// Longer than any Vercel function may run (max 800 s), so a live run's lock is never ignored.
+const LOCK_SLOT = 15 * 60_000
 
 interface ResetOptions {
   password?: string
@@ -116,27 +116,32 @@ export async function resetDemoUser(
   return { userId }
 }
 
-/** Takes the user's reset lock: a Storage object uploaded with upsert: false fails if it already exists. */
+/**
+ * Takes the user's reset lock `locks/demo-reset/{uid}/{slot}`, slot = LOCK_SLOT-long window. Creating it
+ * with upsert: false is atomic within a slot; across a slot boundary each run creates its own key, then
+ * lists both neighbours, so of two overlapping runs at least one sees the other and backs off.
+ * A lock never released (function killed by a timeout) is ignored two slots later, so nothing ever
+ * deletes a lock it has not proven stale.
+ */
 async function acquireLock(admin: SupabaseClient, userId: string): Promise<string> {
-  const key = `locks/demo-reset/${userId}`
+  const dir = `locks/demo-reset/${userId}`
+  const slot = Math.floor(Date.now() / LOCK_SLOT)
+  const key = `${dir}/${slot}`
   const storage = admin.storage.from(BUCKET)
-  // The body is the start time; the content type only satisfies the bucket's PDF/DOCX whitelist.
-  const take = () => storage.upload(key, new Date().toISOString(), { contentType: PDF, upsert: false })
-  const taken = (error: { message: string } | null) => !!error && /already exists/i.test(error.message)
+  const busy = () => new Error("Demo reset already running")
 
-  let { error } = await take()
-  if (taken(error)) {
-    const { data } = await storage.download(key)
-    const started = Date.parse((await data?.text()) ?? "")
-    // A run killed by a function timeout never releases its lock.
-    // shortcut: two runs taking over the same stale lock can both proceed; fine for one daily cron + rare manual runs.
-    if (!(Date.now() - started < LOCK_TTL)) {
-      await storage.remove([key])
-      ;({ error } = await take())
-    }
+  // The content type only satisfies the bucket's PDF/DOCX whitelist.
+  const { error } = await storage.upload(key, new Date().toISOString(), { contentType: PDF, upsert: false })
+  if (error) throw /already exists/i.test(error.message) ? busy() : error
+
+  const { data, error: listError } = await storage.list(dir, { limit: PAGE })
+  const slots = (data ?? []).map((o) => Number(o.name))
+  if (listError || slots.some((s) => s === slot - 1 || s === slot + 1)) {
+    await storage.remove([key])
+    throw listError ?? busy()
   }
-  if (taken(error)) throw new Error("Demo reset already running")
-  if (error) throw error
+  const expired = slots.filter((s) => s < slot - 1).map((s) => `${dir}/${s}`)
+  if (expired.length) await storage.remove(expired)
   return key
 }
 

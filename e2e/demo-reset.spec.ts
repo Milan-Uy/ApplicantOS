@@ -142,19 +142,41 @@ test("two overlapping resets never empty the demo", async () => {
   expect(count).toBe(SEED_APPLICATIONS.length)
 })
 
-test("a stale lock from a crashed reset does not block the next one", async () => {
-  const lock = `locks/demo-reset/${e2eId}`
-  const old = new Date(Date.now() - 60 * 60_000).toISOString()
-  const { error } = await admin().storage.from(BUCKET).upload(lock, old, { contentType: "application/pdf", upsert: true })
+// Mirrors reset.ts: a lock is the object `locks/demo-reset/{uid}/{slot}`, slot = 15-minute window.
+const SLOT_MS = 15 * 60_000
+const lockKey = (slotOffset: number) =>
+  `locks/demo-reset/${e2eId}/${Math.floor(Date.now() / SLOT_MS) + slotOffset}`
+
+async function withLock(slotOffset: number, run: () => Promise<void>) {
+  const key = lockKey(slotOffset)
+  const { error } = await admin().storage.from(BUCKET).upload(key, "planted", { contentType: "application/pdf" })
   expect(error).toBeNull()
-  await expect(resetForSpec()).resolves.toEqual({ userId: e2eId })
-  // …while a live one does.
-  await admin().storage.from(BUCKET).upload(lock, new Date().toISOString(), { contentType: "application/pdf", upsert: true })
   try {
-    await expect(resetForSpec()).rejects.toThrow(/already running/i)
+    await run()
   } finally {
-    await admin().storage.from(BUCKET).remove([lock])
+    await admin().storage.from(BUCKET).remove([key])
   }
+}
+
+test("a lock left by a crashed reset expires after its slot", async () => {
+  await withLock(-2, async () => {
+    await expect(resetForSpec()).resolves.toEqual({ userId: e2eId })
+  })
+})
+
+for (const [name, offset] of [["this slot", 0], ["the previous slot", -1]] as const) {
+  test(`a live lock in ${name} blocks the reset`, async () => {
+    await withLock(offset, async () => {
+      await expect(resetForSpec()).rejects.toThrow(/already running/i)
+    })
+  })
+}
+
+test("a reset that crossed into the next slot still blocks", async () => {
+  // Write-then-read on both neighbours: a run whose slot is behind ours must see us, and we it.
+  await withLock(1, async () => {
+    await expect(resetForSpec()).rejects.toThrow(/already running/i)
+  })
 })
 
 for (const failAt of ["uploads", "inserts"] as const) {
