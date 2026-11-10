@@ -14,7 +14,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Tech Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript (strict, `@/*` → `src/*`) · Tailwind CSS 4 · Supabase (Auth + Postgres + RLS) · Vercel AI SDK v6 (`ai` + `@ai-sdk/google`) on Gemini 3.5 Flash-Lite · Supabase Storage (private `documents` bucket, server-signed URLs) · `unpdf` + `mammoth` (text extraction) · `@react-pdf/renderer` (cover-letter PDF) · Resend + React Email · `@hello-pangea/dnd` · Zod 4 · n8n (external, job discovery)
+Next.js 16 (App Router) · React 19 · TypeScript (strict, `@/*` → `src/*`) · Tailwind CSS 4 · Supabase (Auth + Postgres + RLS) · Vercel AI SDK v6 (`ai` + `@ai-sdk/google`) on Gemini 3.5 Flash-Lite · Supabase Storage (private `documents` bucket, server-signed URLs) · `unpdf` + `mammoth` (text extraction) · `@react-pdf/renderer` (cover-letter PDF) · Resend + React Email · `@hello-pangea/dnd` · Zod 4 · n8n (external, job discovery — paused) · Playwright + axe-core (e2e)
 
 ## Commands
 
@@ -25,7 +25,7 @@ npm run lint    # ESLint — currently clean; keep it that way
 npm test        # Playwright e2e (own dev server on :3100; resets the E2E_EMAIL user's data)
 ```
 
-`e2e/` holds the Playwright suite. It runs against the real Supabase project as the `E2E_EMAIL` user (never `DEMO_EMAIL`) and writes screenshots to `screenshots/current/` (`SHOTS=before` for a named set). Mock AI calls with `page.route`; specs that mutate data call `resetForSpec()` in `beforeAll`.
+`e2e/` holds the Playwright suite (desktop 1440 px; `screens`, `a11y`, `nav` also at 390 px). It runs against the real Supabase project as the `E2E_EMAIL` user (never `DEMO_EMAIL`; the test server runs with `DEMO_EMAIL=$E2E_EMAIL`, so inside tests the e2e user *is* the demo user) and writes screenshots to `screenshots/current/` (`SHOTS=before` for a named set). Mock AI calls with `page.route`; specs that mutate data call `resetForSpec()` in `beforeAll`. `e2e/routes.ts` lists every page in `ROUTES`; every route in `AXE_ROUTES` must have zero serious/critical axe violations, and no route may scroll horizontally at 390 px. Tests must never call a global cron route while it could touch another user's rows (see `cron.spec.ts`).
 
 **Shell:** quote paths containing `(app)`, `(auth)` or `[id]` — e.g. `cat "src/app/(app)/applications/[id]/page.tsx"` — or the shell treats them as subshells/globs.
 
@@ -51,7 +51,7 @@ E2E_PASSWORD=
 
 - `src/app/(app)/` — authenticated pages: dashboard, applications (+ `[id]` detail, edit, resume, cover-letter), resumes, job-discovery, settings. Each route has `loading.tsx` and colocated `actions.ts` server actions.
 - `src/app/(auth)/` — login, signup. `src/app/auth/callback/` — Supabase OAuth callback.
-- `src/app/api/` — `ai/*` (Gemini), `upload` + `parse-resume` + `view-resume` (Storage), `pdf/cover-letter`, `cron/interview-reminder`, `webhooks/n8n/job-discovery`, `job-discovery/settings`.
+- `src/app/api/` — `ai/*` (Gemini), `upload` + `parse-resume` + `view-resume` (Storage), `pdf/cover-letter`, `cron/interview-reminder` + `cron/demo-reset`, `webhooks/n8n/job-discovery`, `job-discovery/settings`.
 - `src/lib/` — `supabase/` clients, `ai/` (prompts + calls), `storage.ts` + `storage-keys.ts`, `resend.ts`, `email/`, `pdf/`, `rate-limit.ts`, `utils.ts` (`cn()`).
 - `src/components/ui/` — shadcn/ui (Radix) primitives; use them instead of raw `<button>`/`<input>` class strings. Add with `npx shadcn@latest add <name>`, then: import `cn` from `@/lib/utils` (not `cn`), revert any `globals.css`/`layout.tsx` edits, and swap `bg-accent`/`bg-secondary` for `bg-surface-2` (our accent/secondary are bright, shadcn's are subtle surfaces). `badge.tsx` and `skeleton.tsx` are custom — never `add` over them.
 - `src/components/navigation/nav-items.ts` — `NAV_ITEMS`, `isActive`, shared by Sidebar and MobileNav.
@@ -68,8 +68,9 @@ E2E_PASSWORD=
 - **Storage:** one private bucket `documents` (created by the demo reset). Keys are `resumes/{uid}/{uuid}/{safeFilename(name)}` and `cover_letters/{uid}/{uuid}/…`; `documents.s3_key` keeps its old name but holds the Storage path. The browser never gets a long-lived URL: the server signs per request (view 300 s, cover-letter download 3600 s). `safeFilename`/`isOwnedKey` live in `lib/storage-keys.ts` (pure, importable from tests).
 - **Resume upload:** client → `POST /api/upload` (`{ key, token }` from `createSignedUploadUrl`) → browser `uploadToSignedUrl` → `POST /api/parse-resume` (extract text) → editable preview → save to `documents`.
 - **Kanban:** `@hello-pangea/dnd` columns per status, React 19 `useOptimistic` seeded from the `applications` prop (reverts automatically on server error). Kanban is the default view; list view is a toggle.
-- **Job discovery:** n8n reads a user's keywords from `GET /api/job-discovery/settings`, then posts matches to `POST /api/webhooks/n8n/job-discovery`, which dedupes by URL and inserts `applications` rows with `status: "wishlist"`, `source: "online_jobs_ph"`, `auto_discovered: true`.
-- **Interview reminders:** Vercel Cron (`vercel.json`, daily 08:00 UTC) hits `/api/cron/interview-reminder` with `CRON_SECRET`, which emails via Resend.
+- **Job discovery:** paused — the n8n pipeline is retired; the page shows previously discovered jobs. When it ran, n8n read a user's keywords from `GET /api/job-discovery/settings`, then posts matches to `POST /api/webhooks/n8n/job-discovery`, which dedupes by URL and inserts `applications` rows with `status: "wishlist"`, `source: "online_jobs_ph"`, `auto_discovered: true`.
+- **Interview reminders:** Vercel Cron (`vercel.json`, daily 08:00 UTC) hits `/api/cron/interview-reminder` with `CRON_SECRET`, which emails via Resend. It skips the demo user (its interviews are seed data).
+- **Demo account:** `DEMO_EMAIL` is a shared live account; "Try the demo" signs visitors in with no password (`signInAsDemo`). `lib/demo/reset.ts` `resetDemoUser` replaces its data with `lib/demo/seed-data.ts`: daily via Vercel Cron (`/api/cron/demo-reset`, 07:00 UTC, `CRON_SECRET`), or manually with `npm run demo:reset` (calls that route on `NEXT_PUBLIC_APP_URL` — the live demo). The reset resolves exactly one user by exact email before touching anything, builds the new dataset before deleting the old, removes any MFA factors a visitor enrolled, and holds a per-user Storage lock (`locks/demo-reset/{uid}`, 15 min stale TTL) so overlapping runs fail with "already running" instead of emptying the demo. `isDemoUser` guards what visitors must not change: profile/email updates in Settings, and interview-reminder emails.
 - **Loading skeletons:** each `(app)` route's `loading.tsx` defines local `*Skeleton` sub-components mirroring the real layout, built from `components/ui/skeleton.tsx` (`animate-shimmer` keyframe in `globals.css`).
 - **Enum display:** render enum strings like `source` with `.replace(/_/g, " ")`.
 
