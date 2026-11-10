@@ -12,7 +12,7 @@ A full-stack web app that helps job seekers track every application (status, not
 |-------|-----------|
 | Frontend | Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS 4, shadcn/ui |
 | Backend | Next.js API Routes + Server Actions, Node.js |
-| AI | Vercel AI SDK (`ai` + `@ai-sdk/google`), Gemini 2.5 Flash (free tier) |
+| AI | Vercel AI SDK (`ai` + `@ai-sdk/google`), Gemini 3.5 Flash-Lite (free tier) |
 | Database | Supabase (PostgreSQL + RLS) |
 | Auth | Supabase Auth (Google + GitHub OAuth, email/password) |
 | Storage | AWS S3 (resume/cover letter PDFs) via presigned URLs |

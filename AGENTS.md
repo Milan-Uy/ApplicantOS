@@ -14,7 +14,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## Tech Stack
 
-Next.js 16 (App Router) · React 19 · TypeScript (strict, `@/*` → `src/*`) · Tailwind CSS 4 · Supabase (Auth + Postgres + RLS) · Vercel AI SDK v6 (`ai` + `@ai-sdk/google`) on Gemini 2.5 Flash · Supabase Storage (private `documents` bucket, server-signed URLs) · `unpdf` + `mammoth` (text extraction) · `@react-pdf/renderer` (cover-letter PDF) · Resend + React Email · `@hello-pangea/dnd` · Zod 4 · n8n (external, job discovery)
+Next.js 16 (App Router) · React 19 · TypeScript (strict, `@/*` → `src/*`) · Tailwind CSS 4 · Supabase (Auth + Postgres + RLS) · Vercel AI SDK v6 (`ai` + `@ai-sdk/google`) on Gemini 3.5 Flash-Lite · Supabase Storage (private `documents` bucket, server-signed URLs) · `unpdf` + `mammoth` (text extraction) · `@react-pdf/renderer` (cover-letter PDF) · Resend + React Email · `@hello-pangea/dnd` · Zod 4 · n8n (external, job discovery)
 
 ## Commands
 

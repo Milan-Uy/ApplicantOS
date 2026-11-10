@@ -5,7 +5,7 @@ import { KEYWORD_MATCHER_PROMPT, BULLET_REWRITER_PROMPT } from "./prompts/resume
 import type { ResumeOptimizeResult } from "@/types/database"
 
 const google = createGoogleGenerativeAI({ apiKey: process.env.GOOGLE_GEMINI_API_KEY })
-const model = google("gemini-2.5-flash")
+const model = google("gemini-3.5-flash-lite")
 
 const keywordSchema = z.object({
   matchScore: z.number().min(0).max(100),
