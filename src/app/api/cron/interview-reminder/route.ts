@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js"
 import { resend } from "@/lib/resend"
 import { InterviewReminderEmail } from "@/lib/email/interview-reminder"
 import { verifyBearer } from "@/lib/verify-bearer"
+import { isDemoUser } from "@/lib/demo/is-demo"
 import { logError, logInfo } from "@/lib/log"
 import React from "react"
 
@@ -48,6 +49,8 @@ export async function GET(request: NextRequest) {
       if (userError || !userData.user?.email) {
         throw new Error(`No email for user ${app.user_id}`)
       }
+      // The demo's seeded interviews are fiction; never email the shared demo inbox.
+      if (isDemoUser(userData.user)) return false
 
       if (!app.interview_date) {
         throw new Error(`No interview_date for application ${app.id}`)
@@ -82,7 +85,7 @@ export async function GET(request: NextRequest) {
     })
   )
 
-  const sent = results.filter((r) => r.status === "fulfilled").length
+  const sent = results.filter((r) => r.status === "fulfilled" && r.value !== false).length
   const failed = results.filter((r) => r.status === "rejected")
 
   // index into results (aligned with applications), not into the filtered `failed` list

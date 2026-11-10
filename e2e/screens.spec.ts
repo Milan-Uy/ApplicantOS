@@ -3,9 +3,6 @@ import { ROUTES } from "./routes"
 
 const label = process.env.SHOTS ?? "current"
 
-// Routes seen to scroll horizontally at 390 px; remove an entry when its task fixes it.
-const OVERFLOWS_ON_MOBILE = new Set<string>([])
-
 for (const route of ROUTES) {
   test.describe(route.name, () => {
     if (route.public) test.use({ storageState: { cookies: [], origins: [] } })
@@ -13,7 +10,6 @@ for (const route of ROUTES) {
     test(`screenshot ${route.name}`, async ({ page, heroAppId }, testInfo) => {
       const project = testInfo.project.name
       const viewport = page.viewportSize()!
-      if (project === "mobile" && OVERFLOWS_ON_MOBILE.has(route.name)) test.fail()
 
       await page.goto(route.path.replace("[id]", heroAppId))
       await page.waitForLoadState("networkidle")

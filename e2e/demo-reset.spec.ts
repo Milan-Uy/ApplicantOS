@@ -110,6 +110,53 @@ test("repairs a changed password, so login keeps working", async () => {
   }
 })
 
+test("removes MFA factors a visitor enrolled", async () => {
+  // A throwaway user, as above: factor changes must not touch the e2e user's saved session.
+  const email = `reset-mfa-${Date.now()}@example.com`
+  const { userId } = await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+  try {
+    const visitor = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      auth: { persistSession: false },
+    })
+    expect((await visitor.auth.signInWithPassword({ email, password: E2E_PASSWORD })).error).toBeNull()
+    expect((await visitor.auth.mfa.enroll({ factorType: "totp" })).error).toBeNull()
+    expect((await admin().auth.admin.mfa.listFactors({ userId })).data?.factors.length).toBe(1)
+
+    await resetDemoUser(admin(), email, { password: E2E_PASSWORD })
+    expect((await admin().auth.admin.mfa.listFactors({ userId })).data?.factors).toEqual([])
+  } finally {
+    const keys = await listAllKeys(admin(), `resumes/${userId}`)
+    if (keys.length) await admin().storage.from(BUCKET).remove(keys)
+    await admin().auth.admin.deleteUser(userId)
+  }
+})
+
+test("two overlapping resets never empty the demo", async () => {
+  const results = await Promise.allSettled([resetForSpec(), resetForSpec()])
+  expect(results.filter((r) => r.status === "rejected").length).toBe(1)
+  expect(String((results.find((r) => r.status === "rejected") as PromiseRejectedResult).reason)).toMatch(/already running/i)
+  const { count } = await admin()
+    .from("applications")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", e2eId)
+  expect(count).toBe(SEED_APPLICATIONS.length)
+})
+
+test("a stale lock from a crashed reset does not block the next one", async () => {
+  const lock = `locks/demo-reset/${e2eId}`
+  const old = new Date(Date.now() - 60 * 60_000).toISOString()
+  const { error } = await admin().storage.from(BUCKET).upload(lock, old, { contentType: "application/pdf", upsert: true })
+  expect(error).toBeNull()
+  await expect(resetForSpec()).resolves.toEqual({ userId: e2eId })
+  // …while a live one does.
+  await admin().storage.from(BUCKET).upload(lock, new Date().toISOString(), { contentType: "application/pdf", upsert: true })
+  try {
+    await expect(resetForSpec()).rejects.toThrow(/already running/i)
+  } finally {
+    await admin().storage.from(BUCKET).remove([lock])
+  }
+})
+
 for (const failAt of ["uploads", "inserts"] as const) {
   test(`a failed ${failAt.slice(0, -1)} leaves the previous dataset intact`, async () => {
     await resetForSpec()
