@@ -50,7 +50,7 @@ const FLOAT_CARDS = [
 
 export default function SignupPage() {
   const [state, formAction, pending] = useActionState(
-    async (_prev: { error: string } | null, formData: FormData) => {
+    async (_prev: { error?: string; notice?: string } | null, formData: FormData) => {
       const result = await signUp(formData)
       return result ?? null
     },
@@ -168,6 +168,11 @@ export default function SignupPage() {
           <AuthHeading title="Create your account" subtitle="Start tracking your job search" />
 
           {state?.error && <AuthError message={state.error} />}
+          {state?.notice && (
+            <div role="status" className="mt-4 rounded-lg border border-success/20 bg-success/10 px-3 py-2 text-sm text-foreground">
+              {state.notice}
+            </div>
+          )}
 
           <form action={formAction} className="mt-8 flex flex-col gap-4">
             <div className="flex flex-col gap-1.5">

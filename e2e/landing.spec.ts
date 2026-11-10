@@ -64,6 +64,25 @@ test("failed login keeps what was typed", async ({ page }) => {
   await expect(page.getByLabel("Password")).toHaveValue("not-the-password")
 })
 
+// An existing address gets Supabase's anti-enumeration reply — no session, no error, no email sent —
+// the same shape as a new signup awaiting confirmation.
+test("signup that needs email confirmation says so", async ({ page }) => {
+  await page.goto("/signup")
+  await page.waitForLoadState("networkidle")
+  await page.getByLabel("Full name").fill("E2E Signup")
+  await page.getByLabel("Email").fill(E2E_EMAIL)
+  await page.getByLabel("Password").fill(randomUUID())
+  await page.getByRole("button", { name: "Create account" }).click()
+  await expect(page.getByRole("status")).toContainText("Check your email")
+  expect(new URL(page.url()).pathname).toBe("/signup")
+})
+
+// The n8n pipeline is retired (Job Discovery shows "Automation paused"); the landing must not claim it runs.
+test("landing doesn't claim job discovery is running", async ({ page }) => {
+  await page.goto("/")
+  for (const claim of [/check daily/i, /last checked/i, /every morning/i]) await expect(page.getByText(claim)).toHaveCount(0)
+})
+
 test("demo login survives a password change", async ({ page }) => {
   await setPassword(randomUUID())
   try {

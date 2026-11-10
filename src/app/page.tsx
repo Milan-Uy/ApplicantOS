@@ -9,7 +9,7 @@ const STEPS = [
   {
     num: "01 / Discover",
     heading: "Set your keywords.",
-    body: "Add the roles you want — react developer, bookkeeper, virtual assistant. We scan OnlineJobs.ph every morning and queue matches as wishlist applications.",
+    body: "Add the roles you want — react developer, bookkeeper, virtual assistant. Matches from OnlineJobs.ph are queued as wishlist applications.",
   },
   {
     num: "02 / Track",

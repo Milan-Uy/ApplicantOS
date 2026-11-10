@@ -29,7 +29,7 @@ export async function signInAsDemo(): Promise<{ error: string } | { tokenHash: s
 export async function signUp(formData: FormData) {
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email: formData.get("email") as string,
     password: formData.get("password") as string,
     options: {
@@ -41,6 +41,10 @@ export async function signUp(formData: FormData) {
 
   if (error) {
     return { error: error.message }
+  }
+  // With "Confirm email" on there is no session until the link is clicked; /dashboard would bounce to /login.
+  if (!data.session) {
+    return { notice: "Check your email for a confirmation link, then sign in." }
   }
 
   redirect("/dashboard")

@@ -83,13 +83,14 @@ export function Features() {
             </TileIcon>
             <h3 className="mb-1.5 text-[16px] font-semibold tracking-[-0.01em]">Auto-discover jobs on OnlineJobs.ph</h3>
             <p className="text-[13px] leading-[1.5] text-muted-fg">
-              Set a few keywords. We check daily and queue any matches as wishlist applications &mdash; you just review,
-              dismiss, or move them forward.
+              Set a few keywords and matching roles land as wishlist applications &mdash; you just review, dismiss, or
+              move them forward.
             </p>
             <div className="mt-5 flex items-center gap-2">
-              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-success" />
+              <span className="h-2 w-2 flex-shrink-0 rounded-full bg-muted-fg" />
               <span className="text-[11px] text-muted-fg">
-                Last checked <span className="font-medium text-foreground">2h ago</span> &middot; 3 new matches
+                <span className="font-medium text-foreground">Automation paused</span> &middot; showing previously
+                discovered matches
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
