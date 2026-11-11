@@ -69,7 +69,7 @@ export function KeywordsEditor({
         onKeyDown={onKeyDown}
         onBlur={commit}
         disabled={keywords.length >= MAX_KEYWORDS}
-        placeholder='e.g. "react developer", "virtual assistant"'
+        placeholder='e.g. "react developer", "bookkeeper"'
         aria-describedby="keyword-hint"
       />
       <p id="keyword-hint" className="text-xs text-muted-fg">
