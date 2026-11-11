@@ -56,23 +56,28 @@ test.describe("demo reset cron", () => {
   })
 })
 
-test("interview-reminder cron skips the demo user", async ({ request }) => {
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
-  // The route is global: never let a test send or mark a real user's reminder.
+const tomorrow = () => new Date(Date.now() + 86_400_000).toISOString().slice(0, 10)
+
+// The route is global: never let a test send or mark a real user's reminder.
+async function skipIfOthersDueTomorrow() {
   const { count: others, error } = await admin()
     .from("applications")
     .select("*", { count: "exact", head: true })
     .eq("status", "interview")
-    .eq("interview_date", tomorrow)
+    .eq("interview_date", tomorrow())
     .eq("reminder_sent", false)
     .neq("user_id", e2eId)
   expect(error).toBeNull()
   test.skip(others !== 0, "another user has a reminder due tomorrow; calling the cron would email them")
+}
+
+test("interview-reminder cron skips the demo user", async ({ request }) => {
+  await skipIfOthersDueTomorrow()
 
   expect(await findUserId(admin(), E2E_EMAIL)).toBe(e2eId)
   const { data: app } = await admin()
     .from("applications")
-    .update({ interview_date: tomorrow, reminder_sent: false })
+    .update({ interview_date: tomorrow(), reminder_sent: false })
     .eq("user_id", e2eId)
     .eq("status", "interview")
     .select("id")
@@ -85,4 +90,35 @@ test("interview-reminder cron skips the demo user", async ({ request }) => {
   expect(await res.json()).toEqual({ sent: 0, failed: 0 })
   const { data: after } = await admin().from("applications").select("reminder_sent").eq("id", app!.id).single()
   expect(after!.reminder_sent).toBe(false)
+})
+
+test("interview-reminder cron leaves a refused email unsent", async ({ request }) => {
+  await skipIfOthersDueTomorrow()
+
+  // Resend's onboarding sender refuses example.com (422), so the send fails without delivering anything.
+  const { data: created, error: userError } = await admin().auth.admin.createUser({
+    email: `reminder-${Date.now()}@example.com`,
+    email_confirm: true,
+  })
+  expect(userError).toBeNull()
+  const userId = created.user!.id
+  try {
+    const { data: app, error } = await admin()
+      .from("applications")
+      .insert({ user_id: userId, company: "Refusal Co", role: "Reminder probe", status: "interview", interview_date: tomorrow() })
+      .select("id")
+      .single()
+    expect(error).toBeNull()
+
+    const res = await request.get("/api/cron/interview-reminder", {
+      headers: { authorization: `Bearer ${SECRET}` },
+    })
+    expect(res.status()).toBe(200)
+    expect(await res.json()).toEqual({ sent: 0, failed: 1 })
+    const { data: after } = await admin().from("applications").select("reminder_sent").eq("id", app!.id).single()
+    expect(after!.reminder_sent).toBe(false)
+  } finally {
+    await admin().from("applications").delete().eq("user_id", userId)
+    await admin().auth.admin.deleteUser(userId)
+  }
 })
