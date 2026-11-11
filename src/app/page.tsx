@@ -84,7 +84,7 @@ export default function LandingPage() {
             <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-primary-fg">
               New
             </span>
-            Job Discovery &mdash; auto-find roles on OnlineJobs.ph
+            Streamed AI cover letters, tailored to each role
             <ArrowRight className="h-3 w-3 flex-shrink-0" />
           </div>
 
