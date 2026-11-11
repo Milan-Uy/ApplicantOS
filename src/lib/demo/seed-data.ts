@@ -34,122 +34,122 @@ export interface SeedResume {
 }
 
 export const SEED_HERO_APP = {
-  company: "Linear",
+  company: "PayMongo",
   role: "Product Engineer",
   status: "applied",
 } as const satisfies Pick<SeedApplication, "company" | "role" | "status">
 
-const LINEAR_JD = `Linear is building the issue tracker that modern software teams love to use. We are looking for a Product Engineer who cares deeply about craft and speed.
+const HERO_JD = `PayMongo builds the payments platform Philippine businesses use to accept cards and e-wallets online. We are looking for a Product Engineer who cares deeply about craft and speed.
 
 What you'll do
 - Own features end to end, from the first sketch to the release note.
-- Build fast, polished interfaces in React and TypeScript, backed by a real-time sync engine.
-- Work with GraphQL APIs and PostgreSQL, and keep p95 interactions under 100 ms.
-- Partner with design to ship keyboard-first workflows, and write the docs for them.
+- Build fast, polished checkout and merchant dashboard interfaces in React and TypeScript.
+- Work with GraphQL and REST APIs on PostgreSQL, and surface webhook events clearly to merchants.
+- Partner with design on every flow, and write the developer docs for them.
 
 What we look for
 - 4+ years building production web applications with React, TypeScript and Node.js.
 - A sharp eye for UI detail: motion, typography, empty and error states.
 - Experience with performance profiling, accessibility (WCAG 2.1 AA) and design systems.
-- Comfortable working asynchronously in a remote, writing-heavy team.
+- Comfortable in a hybrid team between Makati and remote.
 
-Nice to have: experience with offline-first sync, Electron, or developer tooling.`
+Nice to have: payments or PCI DSS experience, or developer tooling.`
 
+// Philippine companies, salaries in PHP per month (the demo's audience is local).
 export const SEED_APPLICATIONS: SeedApplication[] = [
   {
     ...SEED_HERO_APP,
     source: "company_site",
-    location: "Remote",
-    url: "https://linear.app/careers",
-    salary_min: 140000,
-    salary_max: 180000,
-    salary_currency: "USD",
-    job_description: LINEAR_JD,
+    location: "Makati (hybrid)",
+    salary_min: 130000,
+    salary_max: 170000,
+    salary_currency: "PHP",
+    salary_period: "monthly",
+    job_description: HERO_JD,
     notes: "Referred to the careers page by a former colleague. Emphasise the kanban drag-and-drop work.",
     appliedDaysAgo: 3,
     createdDaysAgo: 5,
   },
   {
-    company: "Vercel",
+    company: "GCash",
     role: "Frontend Engineer, Dashboard",
     status: "applied",
     source: "linkedin",
-    location: "Remote (APAC)",
-    url: "https://vercel.com/careers",
-    salary_min: 9000,
-    salary_max: 12000,
-    salary_currency: "USD",
+    location: "Taguig (hybrid)",
+    salary_min: 90000,
+    salary_max: 130000,
+    salary_currency: "PHP",
     salary_period: "monthly",
-    job_description: "Build the Vercel dashboard with Next.js App Router, React Server Components and a design system used by millions of developers.",
+    job_description: "Build GCash's merchant and partner dashboards with Next.js App Router, React Server Components and a shared design system.",
     appliedDaysAgo: 6,
     createdDaysAgo: 7,
   },
   {
-    company: "Supabase",
+    company: "Maya",
     role: "Developer Experience Engineer",
     status: "phone_screen",
     source: "referral",
-    location: "Remote",
+    location: "Mandaluyong (hybrid)",
     contact_name: "Jamie Cruz",
     contact_email: "jamie@example.com",
-    job_description: "Improve the Supabase developer experience across docs, client libraries and the dashboard. TypeScript, Postgres and a love for writing.",
+    job_description: "Improve the developer experience of Maya's payment APIs across docs, SDKs and the merchant dashboard. TypeScript, Postgres and a love for writing.",
     notes: "Phone screen went well; next step is a take-home.",
     appliedDaysAgo: 12,
     createdDaysAgo: 14,
   },
   {
-    company: "Stripe",
-    role: "Software Engineer, Payments UI",
+    company: "Sprout Solutions",
+    role: "Software Engineer, Payroll UI",
     status: "interview",
     source: "company_site",
-    location: "Singapore (hybrid)",
-    salary_min: 150000,
-    salary_max: 200000,
-    salary_currency: "USD",
-    job_description: "Design and build the payment interfaces merchants embed on their sites. React, TypeScript, accessibility and rigorous testing.",
+    location: "Pasig (hybrid)",
+    salary_min: 110000,
+    salary_max: 150000,
+    salary_currency: "PHP",
+    salary_period: "monthly",
+    job_description: "Design and build the payroll and HR interfaces Philippine businesses use every pay day. React, TypeScript, accessibility and rigorous testing.",
     notes: "Onsite loop: system design, frontend pairing, values.",
     appliedDaysAgo: 18,
     createdDaysAgo: 20,
     interviewInDays: 2,
   },
   {
-    company: "Canva",
+    company: "Thinking Machines",
     role: "Senior Frontend Engineer",
     status: "offer",
     source: "linkedin",
     location: "Manila (hybrid)",
-    salary_min: 250000,
-    salary_max: 300000,
+    salary_min: 180000,
+    salary_max: 220000,
     salary_currency: "PHP",
     salary_period: "monthly",
-    job_description: "Build collaborative editing features in Canva's editor. React, TypeScript, WebGL and performance at scale.",
+    job_description: "Build data-heavy web apps and dashboards for clients across Southeast Asia. React, TypeScript, data visualisation and performance at scale.",
     notes: "Offer received; deadline to respond in one week.",
     appliedDaysAgo: 30,
     createdDaysAgo: 32,
   },
   {
-    company: "Atlassian",
-    role: "Frontend Engineer, Jira",
+    company: "Kalibrr",
+    role: "Frontend Engineer, Job Marketplace",
     status: "rejected",
     source: "indeed",
-    location: "Remote",
-    job_description: "Ship features across Jira's web app using React, TypeScript and GraphQL.",
+    location: "Remote (Philippines)",
+    job_description: "Ship features across Kalibrr's job marketplace using React, TypeScript and GraphQL.",
     notes: "Rejected after the technical round. Feedback: go deeper on state management trade-offs.",
     appliedDaysAgo: 25,
     createdDaysAgo: 27,
   },
   {
-    company: "Raycast",
+    company: "Angkas",
     role: "Full-Stack Engineer",
     status: "wishlist",
     source: "company_site",
-    location: "Remote (EU/APAC)",
-    url: "https://www.raycast.com/careers",
-    job_description: "Build the Raycast store and backend services. TypeScript, React, Node.js and Swift interop.",
+    location: "Taguig (hybrid)",
+    job_description: "Build Angkas's rider and partner web tools and backend services. TypeScript, React, Node.js and real-time location data.",
     createdDaysAgo: 2,
   },
   {
-    company: "Remote Staffing Co.",
+    company: "Bayanihan Digital",
     role: "React Developer (Full-time, Remote)",
     status: "wishlist",
     source: "online_jobs_ph",
@@ -164,31 +164,31 @@ export const SEED_APPLICATIONS: SeedApplication[] = [
     createdDaysAgo: 1,
   },
   {
-    company: "BrightPath Digital",
+    company: "Habagat Studio",
     role: "Next.js Frontend Developer",
     status: "wishlist",
     source: "online_jobs_ph",
     location: "Remote (Philippines)",
     url: "https://www.onlinejobs.ph/jobseekers/job/demo-nextjs-frontend",
-    salary_min: 1200,
-    salary_max: 1800,
-    salary_currency: "USD",
+    salary_min: 70000,
+    salary_max: 95000,
+    salary_currency: "PHP",
     salary_period: "monthly",
     job_description: "Own the marketing site and customer portal built with Next.js App Router and TypeScript.",
     auto_discovered: true,
     createdDaysAgo: 2,
   },
   {
-    company: "Northwind Labs",
+    company: "Sampaguita Labs",
     role: "TypeScript Engineer",
     status: "wishlist",
     source: "online_jobs_ph",
     location: "Remote (Philippines)",
     url: "https://www.onlinejobs.ph/jobseekers/job/demo-typescript-engineer",
-    salary_min: 15,
-    salary_max: 22,
-    salary_currency: "USD",
-    salary_period: "hourly",
+    salary_min: 85000,
+    salary_max: 115000,
+    salary_currency: "PHP",
+    salary_period: "monthly",
     job_description: "Build internal tools with TypeScript, Node.js and PostgreSQL. Supabase experience is a plus.",
     auto_discovered: true,
     createdDaysAgo: 4,
@@ -278,7 +278,7 @@ export const SEED_RESUMES: SeedResume[] = [
 const RESUME_OPTIMIZE: ResumeOptimizeResult = {
   matchScore: 78,
   // Every rewrite only rephrases what FRONTEND_RESUME shows: it is the demo's proof that the optimizer never invents.
-  missingKeywords: ["real-time sync engine", "keyboard-first workflows", "offline-first", "Electron", "developer tooling"],
+  missingKeywords: ["payments", "checkout flows", "webhooks", "PCI DSS", "developer tooling"],
   suggestions: [
     {
       original: "Led the rebuild of the loan application flow in Next.js and TypeScript, cutting time-to-interactive from 4.1 s to 1.6 s on mid-range Android devices.",
@@ -301,17 +301,17 @@ const RESUME_OPTIMIZE: ResumeOptimizeResult = {
       reason: "Echoes 'production web applications'; [N] marks a number only you can fill in.",
     },
   ],
-  summary: "Strong match on React, TypeScript, performance and accessible UI work. The gaps (real-time sync, keyboard-first workflows, offline-first) aren't in the resume; add them only if you have that experience.",
+  summary: "Strong match on React, TypeScript, performance and accessible UI work. The gaps (payments, checkout flows, webhooks, PCI DSS) aren't in the resume; add them only if you have that experience.",
 }
 
 const COVER_LETTER: CoverLetterResult = {
-  coverLetter: `Linear's focus on craft and speed is the kind of work I want to do next, and I would love to join as a Product Engineer.
+  coverLetter: `PayMongo's focus on craft and speed is the kind of work I want to do next, and I would love to join as a Product Engineer.
 
 At Tala I led the rebuild of our loan application flow in Next.js and TypeScript, cutting time-to-interactive from 4.1 seconds to 1.6 on mid-range Android devices. I also built a component library of 40+ accessible primitives on Radix UI that four product teams adopted, and introduced Playwright end-to-end and visual regression tests that cut production UI regressions by roughly 60%.
 
 Before that, at Kumu, I shipped real-time chat and gifting with React and WebSockets for a live-streaming app with more than ten million users. I also profiled the stream viewer's render bottlenecks, raising frame rates on low-end devices from 30 to 55 fps, and worked with design on motion and typography tokens.
 
-I would be glad to talk about how I could help Linear keep its interfaces fast and polished.`,
+I would be glad to talk about how I could help PayMongo keep its checkout and merchant dashboards fast and polished.`,
 }
 
 export const SEED_AI_RESULTS = [

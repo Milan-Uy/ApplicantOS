@@ -94,7 +94,7 @@ export function Features() {
               </span>
             </div>
             <div className="mt-3 flex flex-wrap gap-1.5">
-              {["react developer", "bookkeeper", "virtual assistant"].map((kw) => (
+              {["react developer", "bookkeeper"].map((kw) => (
                 <span
                   key={kw}
                   className="rounded-md border border-primary/22 bg-primary/8 px-2.5 py-0.5 font-mono text-[11px] text-[#a5acf0]"
