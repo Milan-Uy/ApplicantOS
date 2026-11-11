@@ -277,40 +277,41 @@ export const SEED_RESUMES: SeedResume[] = [
 
 const RESUME_OPTIMIZE: ResumeOptimizeResult = {
   matchScore: 78,
-  missingKeywords: ["GraphQL", "real-time sync", "keyboard-first", "offline-first"],
+  // Every rewrite only rephrases what FRONTEND_RESUME shows: it is the demo's proof that the optimizer never invents.
+  missingKeywords: ["real-time sync engine", "keyboard-first workflows", "offline-first", "Electron", "developer tooling"],
   suggestions: [
     {
       original: "Led the rebuild of the loan application flow in Next.js and TypeScript, cutting time-to-interactive from 4.1 s to 1.6 s on mid-range Android devices.",
-      rewritten: "Owned the loan application flow end to end in Next.js and TypeScript, cutting time-to-interactive from 4.1 s to 1.6 s and keeping p95 interactions under 100 ms.",
-      reason: "Mirrors the role's end-to-end ownership and its explicit p95 latency target.",
+      rewritten: "Led the rebuild of the loan application flow in Next.js and TypeScript, a web performance win that cut time-to-interactive from 4.1 s to 1.6 s on mid-range Android devices.",
+      reason: "Names the performance outcome the posting cares about, using only your own numbers.",
     },
     {
       original: "Built a component library of 40+ accessible primitives on Radix UI, adopted by four product teams.",
-      rewritten: "Built a WCAG 2.1 AA design system of 40+ keyboard-first primitives on Radix UI, adopted by four product teams.",
-      reason: "Adds the accessibility standard and keyboard-first language the posting calls out.",
+      rewritten: "Built a design-system component library of 40+ accessible primitives on Radix UI, adopted by four product teams.",
+      reason: "Uses the posting's term 'design systems' for work the resume already shows.",
     },
     {
-      original: "Shipped real-time chat and gifting features for a live-streaming app with 10M+ users using React, WebSockets and Redux Toolkit.",
-      rewritten: "Shipped real-time sync for chat and gifting to 10M+ users with React and WebSockets, handling reconnects and optimistic updates.",
-      reason: "Connects your WebSocket work to the real-time sync engine in the job description.",
+      original: "Worked with design to define motion and typography tokens for the web app.",
+      rewritten: "Partnered with design to define motion and typography tokens for the web app.",
+      reason: "Uses the posting's 'partner with design' and stronger verb; motion and typography match its UI-detail list.",
+    },
+    {
+      original: "Built marketing sites and small dashboards for local businesses with React, Node.js and PostgreSQL.",
+      rewritten: "Built production marketing sites and dashboards for [N] local businesses with React, Node.js and PostgreSQL.",
+      reason: "Echoes 'production web applications'; [N] marks a number only you can fill in.",
     },
   ],
-  summary: "Strong match on React, TypeScript, performance and design-system work. Close the gap by naming real-time sync and GraphQL experience explicitly and framing achievements as end-to-end ownership.",
+  summary: "Strong match on React, TypeScript, performance and accessible UI work. The gaps (real-time sync, keyboard-first workflows, offline-first) aren't in the resume; add them only if you have that experience.",
 }
 
 const COVER_LETTER: CoverLetterResult = {
-  coverLetter: `Dear Linear team,
+  coverLetter: `Linear's focus on craft and speed is the kind of work I want to do next, and I would love to join as a Product Engineer.
 
-I have used Linear every day for the last two years, and the thing that keeps me there is speed: every interaction feels instant. I would love to help build that feeling as your next Product Engineer.
+At Tala I led the rebuild of our loan application flow in Next.js and TypeScript, cutting time-to-interactive from 4.1 seconds to 1.6 on mid-range Android devices. I also built a component library of 40+ accessible primitives on Radix UI that four product teams adopted, and introduced Playwright end-to-end and visual regression tests that cut production UI regressions by roughly 60%.
 
-At Tala I owned our loan application flow end to end, from the first sketch with design to the release note. Rebuilding it in Next.js and TypeScript cut time-to-interactive from 4.1 seconds to 1.6 on the mid-range phones our customers actually use. Along the way I built a library of 40+ accessible, keyboard-first primitives that four teams now ship with.
+Before that, at Kumu, I shipped real-time chat and gifting with React and WebSockets for a live-streaming app with more than ten million users. I also profiled the stream viewer's render bottlenecks, raising frame rates on low-end devices from 30 to 55 fps, and worked with design on motion and typography tokens.
 
-Before that, at Kumu, I built real-time chat and gifting for more than ten million users, which taught me how much care goes into optimistic updates, reconnects and sync that never surprises the user.
-
-I write a lot, I work well asynchronously, and I sweat the details of motion, typography and empty states. I would be glad to talk about how I could contribute to Linear.
-
-Best regards,
-Alex Reyes`,
+I would be glad to talk about how I could help Linear keep its interfaces fast and polished.`,
 }
 
 export const SEED_AI_RESULTS = [
