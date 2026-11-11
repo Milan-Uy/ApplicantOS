@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
         { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" }
       )
 
-      await resend.emails.send({
+      const { error: sendError } = await resend.emails.send({
         from: "ApplicantOS <onboarding@resend.dev>",
         to: userData.user.email,
         subject: `Interview reminder: ${app.role} at ${app.company} tomorrow`,
@@ -72,6 +72,8 @@ export async function GET(request: NextRequest) {
           applicationUrl: `${appUrl}/applications/${app.id}`,
         }),
       })
+      // Resend returns refusals (403 sender, 422, 429) instead of throwing; leave the row unsent for the next run.
+      if (sendError) throw new Error(`Resend ${sendError.name}: ${sendError.message}`)
 
       const { error: updateError } = await supabaseAdmin
         .from("applications")
